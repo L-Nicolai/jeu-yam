@@ -41,7 +41,7 @@ Ce solo sert de banc d'essai : le multijoueur en ligne en direct, chacun sur son
 ### Actors
 
 - A1. Leslie — la joueuse, sur son téléphone (ou un ordinateur).
-- A2. L'ordinateur — adversaire automatique intégré à l'appli ; il joue la même feuille, avec exactement les mêmes règles et contraintes que la joueuse.
+- A2. L'ordinateur — adversaire automatique intégré à l'appli ; il joue la même feuille, avec exactement les mêmes règles et contraintes que la joueuse. Absent du mode « Jouer seule » (R29).
 
 ### Requirements
 
@@ -70,12 +70,12 @@ Ce solo sert de banc d'essai : le multijoueur en ligne en direct, chacun sur son
 **Interface et expérience**
 
 - R17. Interface en français, conçue pour l'écran du téléphone (taille iPhone au minimum) et le jeu au doigt ; l'affichage s'adapte automatiquement aux écrans plus grands — iPad, ordinateur.
-- R18. Une fine bande d'en-tête (tour en cours, totaux des deux joueurs, accès « Nouvelle partie ») surmonte la grille complète des 5 colonnes, qui reste visible pendant le jeu ; les dés et la commande de lancer occupent le bas de l'écran ; la grille s'adapte à la taille de l'écran et ne défile jamais.
+- R18. Une fine bande d'en-tête (tour en cours, totaux des deux joueurs, accès « Nouvelle partie ») surmonte la grille complète des 5 colonnes, qui reste visible pendant le jeu ; les dés et la commande de lancer occupent le bas de l'écran ; la grille s'adapte à la taille de l'écran et ne défile jamais. Deux onglets au-dessus de la grille permettent de consulter à tout moment la feuille de chaque joueur (masqués en mode « Jouer seule »).
 - R19. Toucher une case affiche le détail des points qu'elle rapporterait avec les dés actuels et demande confirmation avant d'inscrire ; les cases jouables avec les dés du moment sont signalées visuellement. Toucher une autre case remplace l'aperçu en cours ; toucher hors de la grille (ou « Annuler ») ferme l'aperçu sans rien inscrire.
 - R20. Les annonces Tam des deux joueurs s'affichent à l'écran (ex. « L'ordinateur annonce Tam : Carré »).
 - R21. Ambiance visuelle épurée et chaleureuse : fond crème, encre chaude, accent terracotta ; palette claire unique en v1.
 - R22. Les dés s'animent au lancer ; un Yam réussi déclenche une brève célébration visuelle ; la v1 est sans sons.
-- R23. L'ordinateur joue « correct mais battable » : gardes, relances et choix de cases sensés, sans calcul optimal ; ses tours sont rapides mais lisibles : ses lancers, les dés qu'il garde entre deux lancers, ses annonces et ses inscriptions sont visibles.
+- R23. Pendant le tour de l'ordinateur, l'écran bascule sur sa feuille et ses dés : chaque étape (lancer, dés gardés, annonce, inscription) s'affiche à un rythme lisible — environ une seconde par lancer ou garde, deux secondes et demie sur l'inscription avec la case surlignée ; un toucher passe à l'étape suivante. Son niveau : cohérent et battable — il protège son Total (60) (l'enjeu du ± 5 par point d'écart au seuil), n'annonce pas de Tam hasardeux, ne gâche ni ses colonnes ordonnées ni ses grosses cases ; sans calcul optimal.
 - R24. Sauvegarde automatique locale à chaque action ; à l'ouverture, la partie en cours reprend là où elle en était ; une seule partie en cours à la fois ; « Nouvelle partie » exige une confirmation avant d'effacer.
 - R25. Écran de fin de partie : les deux feuilles détaillées, les totaux, le vainqueur — ou l'égalité, affichée comme telle quand les deux TOTAL généraux sont exactement égaux — et un bouton pour rejouer.
 
@@ -83,7 +83,9 @@ Ce solo sert de banc d'essai : le multijoueur en ligne en direct, chacun sur son
 
 - R26. Le moteur manipule des « joueurs » interchangeables — humaine locale, ordinateur, demain joueur distant — et un état de partie intégralement transportable, pour que le multi en direct soit un ajout, pas une refonte.
 - R27. Dès la v1, le jeu est accessible par une adresse web depuis n'importe quel téléphone, sans installation ni manipulation technique.
-- R28. Le solo est un mode permanent, pas une étape jetable : après l'ajout du multi, l'appli proposera au démarrage le choix entre jouer seule contre l'ordinateur et jouer à plusieurs, chacun sur son téléphone. La v1, qui ne contient que le solo, démarre directement dessus.
+- R28. Au démarrage et après « Nouvelle partie », l'appli propose le choix du mode : « Jouer seule » (R29) ou « Contre l'ordinateur » ; une partie en cours est reprise directement sans passer par cet écran (R24). Le multi en ligne rejoindra ce même écran de choix ; le solo contre l'ordinateur reste un mode permanent.
+- R29. Mode « Jouer seule » : Leslie remplit sa feuille sans adversaire ; l'en-tête n'affiche que son total ; l'écran de fin présente sa feuille détaillée et son TOTAL général, sans vainqueur ; toutes les règles (colonnes, Tam, Sèche, barème, garde-fous) s'appliquent à l'identique.
+- R30. L'équité des dés est prouvée par la suite de tests : contrôle statistique d'uniformité sur au moins 60 000 tirages, écart borné par face.
 
 ### Key Flows
 
@@ -327,6 +329,46 @@ L'arborescence est une déclaration de forme, pas une camisole : l'implémenteur
 - **Execution note :** paquet/config — vérification par smoke d'installation, pas de tests unitaires. Test expectation: none — configuration et publication, couvertes par le smoke ci-dessous.
 - **Verification :** l'URL publique ouvre le jeu sur un iPhone et un Android réels ; sur iPhone, épingler d'abord puis créer la partie de test dans l'appli épinglée ; l'épinglage affiche l'icône et un plein écran correct ; une partie sauvegardée survit à la fermeture sur les deux appareils.
 
+### U8. Spectacle du tour de l'ordinateur et feuille adverse
+
+- **Goal :** suivre le tour de l'ordinateur comme si on regardait un joueur à table, et pouvoir consulter sa feuille à tout moment.
+- **Requirements :** R18 (onglets), R20, R23 ; retours de jeu du 2026-07-17.
+- **Dependencies :** U3, U4.
+- **Files :** `src/ui/app.js`, `src/ui/grid.js`, `index.html`, `styles.css`.
+- **Approach :** pendant le tour de l'ordinateur, bascule automatique sur sa feuille et ses dés (onglet actif visible) ; tempo par étape : ≈ 1 000 ms par lancer/garde/annonce, ≈ 2 500 ms sur l'inscription avec la case surlignée ; tout toucher passe immédiatement à l'étape suivante ; onglets Leslie / L'ordinateur consultables aussi pendant le tour de la joueuse ; retour automatique à sa feuille quand son tour commence.
+- **Test scenarios (smoke) :** un tour complet de l'ordinateur se suit sur sa feuille, étape par étape, inscription surlignée ; un toucher accélère ; l'onglet adverse se consulte pendant mon tour puis revient.
+- **Verification :** partie jouée à la main : chaque coup de l'ordinateur est compréhensible sans effort.
+
+### U9. Une IA cohérente
+
+- **Goal :** un ordinateur qui joue de façon sensée — toujours battable, plus jamais absurde.
+- **Requirements :** R23.
+- **Dependencies :** U1.
+- **Files :** `src/engine/ai.js`, `tests/ai.test.js`.
+- **Approach :** fonction de valeur consciente du Total (60) — sous le seuil chaque point de chiffre vaut ~6, au-dessus ~5 : viser ≥ 60 par colonne ; placement par valeur relative (ne pas gâcher Yam, Carré ou les gros chiffres avec des miettes ; barrer les petites cases d'abord) ; annonces Tam réservées aux coups quasi acquis (combinaison déjà servie) — jamais sur un simple brelan ; arrêt de relance quand l'espérance de gain est négative ; mêmes règles de légalité que la joueuse.
+- **Test scenarios :** n'annonce jamais Tam-Carré sur un simple brelan ; avec 6-6-6 et la case 6 ouverte près du seuil, vise les 6 ; calibrage renforcé : ≥ 95 % de victoires sur 300 parties contre le joueur aléatoire légal (germe fixé) ; 1 000 parties sans coup illégal ni blocage.
+- **Verification :** `node --test tests/ai.test.js` vert ; en jouant, ses coups paraissent motivés.
+
+### U10. Écran d'accueil et mode « Jouer seule »
+
+- **Goal :** choisir son mode au lancement — remplir sa feuille en solitaire ou affronter l'ordinateur.
+- **Requirements :** R28, R29.
+- **Dependencies :** U1, U5, U6.
+- **Files :** `src/ui/app.js`, `src/ui/endgame.js`, `src/engine/game.js` (partie à un joueur), `src/storage.js`, `index.html`, `styles.css`, `tests/game.test.js`.
+- **Approach :** écran d'accueil deux boutons (« Jouer seule » / « Contre l'ordinateur ») affiché quand aucune partie n'est en cours ; `createGame` paramétré à un joueur ; en-tête simplifié (total unique) ; écran de fin sans vainqueur ; payload de sauvegarde version 2 portant le mode, avec migration douce (payload v1 → contre l'ordinateur).
+- **Test scenarios :** partie « seule » générative complète (65 tours) sans blocage ; fin de partie = feuille + total, sans vainqueur ; sauvegarde/reprise du mode ; un payload v1 existant est restauré en mode contre-ordinateur.
+- **Verification :** les deux modes se jouent de bout en bout ; une sauvegarde v1 antérieure reprend sans erreur.
+
+### U11. Preuve d'équité des dés
+
+- **Goal :** transformer la confiance dans les dés en preuve automatique.
+- **Requirements :** R30.
+- **Dependencies :** U1.
+- **Files :** `tests/fairness.test.js`.
+- **Approach :** 60 000 tirages via `rollDice`, comptage par face, tolérance de ± 2 % autour de 1/6 par face — assez large pour ne jamais être aléatoirement rouge, assez serrée pour détecter un vrai biais.
+- **Test scenarios :** chaque face sort entre 14,6 % et 18,7 % du temps sur 60 000 tirages ; les cinq positions de dés sont testées indépendamment.
+- **Verification :** `node --test tests/fairness.test.js` vert.
+
 ---
 
 ## Verification Contract
@@ -339,6 +381,10 @@ L'arborescence est une déclaration de forme, pas une camisole : l'implémenteur
 | Smoke mobile | fenêtre 390 px (serveur local : `python3 -m http.server`) — grille entière sans défilement, partie complète jouable | U3, U4, U6 | clôture de U4 et U6 |
 | Sauvegarde réelle | fermer/rouvrir en pleine partie, reprise exacte | U5 | clôture de U5 |
 | Déploiement réel | URL GitHub Pages ouverte depuis un iPhone et un Android, épinglage vérifié | U7 | Definition of Done |
+| Tour de l'ordinateur lisible | smoke : un tour complet suivi sur sa feuille (≈ 1 s par étape, 2,5 s sur l'inscription), toucher accélère | U8 | clôture de U8 |
+| IA cohérente | ≥ 95 % de victoires sur 300 parties vs joueur aléatoire (germe fixé) ; jamais de Tam sur simple brelan | U9 | clôture de U9 |
+| Mode « Jouer seule » | partie générative complète à un joueur + smoke écran d'accueil et migration payload v1 | U10 | clôture de U10 |
+| Équité des dés | test statistique : 60 000 tirages, chaque face à 1/6 ± 2 % | U11 | clôture de U11 |
 
 ---
 
@@ -351,3 +397,4 @@ L'arborescence est une déclaration de forme, pas une camisole : l'implémenteur
 - Aucune dépendance d'exécution : zéro paquet npm (le `package.json` ne déclare que `"type": "module"`), pas de bundler, pas de framework ; le dépôt ne contient ni code mort ni essais abandonnés.
 - `README.md` explique en français simple : jouer, épingler sur téléphone, lancer les tests, publier.
 - Le moteur ne référence jamais le DOM (vérifiable par lecture : aucun `document`/`window` sous `src/engine/`).
+- L'écran d'accueil propose « Jouer seule » et « Contre l'ordinateur » ; le tour de l'ordinateur se suit sur sa feuille à un rythme lisible ; l'équité des dés est prouvée par la suite de tests.
