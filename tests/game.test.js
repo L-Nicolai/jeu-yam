@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  acknowledgeHandoff,
   applyEntry,
   createGame,
   GAME_MODES,
@@ -142,13 +143,13 @@ test('sauvegarde locale — aller-retour exact, y compris annonce Tam active', (
   assert.deepEqual(loadGame(storage), state);
 });
 
-test('sauvegarde v2 — le mode Jouer seule est conservé à la reprise', () => {
+test('sauvegarde v3 — le mode Jouer seule est conservé à la reprise', () => {
   const storage = memoryStorage();
   const state = createGame({ mode: GAME_MODES.SINGLE });
   saveGame(state, storage);
   assert.deepEqual(loadSavedGame(storage), state);
   const payload = JSON.parse(storage.getItem('yam-leslie-partie'));
-  assert.equal(payload.version, 2);
+  assert.equal(payload.version, 3);
   assert.equal(payload.mode, GAME_MODES.SINGLE);
 });
 
@@ -163,8 +164,23 @@ test('migration douce — un payload v1 reprend en mode contre l’ordinateur', 
   assert.deepEqual(restored.players, legacyState.players);
   saveGame(restored, storage);
   const upgraded = JSON.parse(storage.getItem('yam-leslie-partie'));
-  assert.equal(upgraded.version, 2);
+  assert.equal(upgraded.version, 3);
   assert.equal(upgraded.mode, GAME_MODES.COMPUTER);
+});
+
+test('migration douce — un payload v2 est restauré sans changer son mode', () => {
+  const storage = memoryStorage();
+  const legacyState = createGame({ mode: GAME_MODES.SINGLE });
+  delete legacyState.handoffRequired;
+  storage.setItem('yam-leslie-partie', JSON.stringify({
+    version: 2,
+    mode: GAME_MODES.SINGLE,
+    state: legacyState,
+  }));
+  const restored = loadSavedGame(storage);
+  assert.equal(restored.mode, GAME_MODES.SINGLE);
+  assert.equal(restored.players.length, 1);
+  assert.equal(restored.handoffRequired, false);
 });
 
 test('écran d’accueil — aucune sauvegarde valide ne représente une partie en cours', () => {
@@ -216,4 +232,82 @@ test('fin de partie — une égalité exacte reste une égalité sans vainqueur 
     winnerIndex: null,
     totals: [-1500, -1500],
   });
+});
+
+test('U14 — une partie locale à 3 joueurs termine 195 tours sans blocage', () => {
+  const random = mulberry32(20260718);
+  let state = createGame({
+    mode: GAME_MODES.LOCAL,
+    players: [
+      { id: 'local-1', name: 'Alice', kind: 'human' },
+      { id: 'local-2', name: 'Basile', kind: 'human' },
+      { id: 'local-3', name: 'Chloé', kind: 'human' },
+    ],
+  });
+  let turns = 0;
+  while (!isGameOver(state) && turns < 196) {
+    if (state.handoffRequired) state = acknowledgeHandoff(state);
+    state = rollDice(state, random);
+    let actions = getLegalActions(state);
+    if (actions.mustAnnounceTam || (!actions.entries.length && actions.announcements.length)) {
+      state = announceTam(state, actions.announcements[0].category);
+      actions = getLegalActions(state);
+    }
+    assert.ok(actions.entries.length > 0, `aucun coup légal au tour ${turns}`);
+    const entry = actions.entries[Math.floor(random() * actions.entries.length)];
+    state = applyEntry(state, entry.column, entry.category);
+    turns += 1;
+  }
+  assert.equal(turns, 195);
+  assert.equal(state.completedTurns, 195);
+  assert.equal(isGameOver(state), true);
+});
+
+test('U14 — le classement complet attribue le même rang aux égalités', () => {
+  const state = createGame({
+    mode: GAME_MODES.LOCAL,
+    players: [
+      { id: 'local-1', name: 'Alice', kind: 'human' },
+      { id: 'local-2', name: 'Basile', kind: 'human' },
+      { id: 'local-3', name: 'Chloé', kind: 'human' },
+    ],
+  });
+  for (const player of state.players) {
+    for (const column of Object.values(player.sheet)) {
+      for (const category of Object.keys(column)) column[category] = 0;
+    }
+  }
+  state.players[0].sheet.free.plus = 20;
+  state.players[1].sheet.free.plus = 20;
+  state.status = 'finished';
+  const outcome = getGameOutcome(state);
+  assert.equal(outcome.type, 'ranking');
+  assert.deepEqual(outcome.winnerIndexes, [0, 1]);
+  assert.deepEqual(outcome.ranking.map(({ rank, playerIndex }) => ({ rank, playerIndex })), [
+    { rank: 1, playerIndex: 0 },
+    { rank: 1, playerIndex: 1 },
+    { rank: 3, playerIndex: 2 },
+  ]);
+});
+
+test('U14 — la reprise conserve le bon joueur et l’écran de passage', () => {
+  const storage = memoryStorage();
+  let state = createGame({
+    mode: GAME_MODES.LOCAL,
+    players: [
+      { id: 'local-1', name: 'Alice', kind: 'human' },
+      { id: 'local-2', name: 'Basile', kind: 'human' },
+    ],
+  });
+  state = rollDice(state, Math.random, [1, 1, 2, 3, 4]);
+  state = applyEntry(state, 'free', 'one');
+  saveGame(state, storage);
+  const restored = loadSavedGame(storage);
+  assert.equal(restored.activePlayerIndex, 1);
+  assert.equal(restored.handoffRequired, true);
+  assert.equal(getLegalActions(restored).canRoll, false);
+  const ready = acknowledgeHandoff(restored);
+  assert.equal(ready.activePlayerIndex, 1);
+  assert.equal(ready.handoffRequired, false);
+  assert.equal(getLegalActions(ready).canRoll, true);
 });

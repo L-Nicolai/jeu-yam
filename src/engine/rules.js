@@ -52,6 +52,7 @@ function trioConstraint(sheetColumn, category, points) {
 
 function assertTurnReady(state) {
   if (state.status !== 'playing') throw new Error('La partie est terminée.');
+  if (state.handoffRequired) throw new Error('Validez d’abord le passage du téléphone.');
   if (state.turn.rollCount === 0) throw new Error('Il faut lancer les dés avant d’inscrire.');
 }
 
@@ -113,6 +114,9 @@ export function getLegalActions(state) {
   if (state.status !== 'playing') {
     return { canRoll: false, canReroll: false, rerollReason: 'La partie est terminée.', entries: [], announcements: [], mustAnnounceTam: false };
   }
+  if (state.handoffRequired) {
+    return { canRoll: false, canReroll: false, rerollReason: 'Passez le téléphone au joueur suivant.', entries: [], announcements: [], mustAnnounceTam: false };
+  }
   if (state.turn.rollCount === 0) {
     return { canRoll: true, canReroll: false, rerollReason: '', entries: [], announcements: [], mustAnnounceTam: false };
   }
@@ -168,6 +172,7 @@ export function toggleHeldDie(state, index) {
 
 export function rollDice(state, random = Math.random, forcedDice = null) {
   if (state.status !== 'playing') throw new Error('La partie est terminée.');
+  if (state.handoffRequired) throw new Error('Validez d’abord le passage du téléphone.');
   if (state.turn.rollCount > 0) {
     const actions = getLegalActions(state);
     if (!actions.canReroll) throw new Error(actions.rerollReason);
@@ -194,4 +199,3 @@ export function rollDice(state, random = Math.random, forcedDice = null) {
   };
   return next;
 }
-

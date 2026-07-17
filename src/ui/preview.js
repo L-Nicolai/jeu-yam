@@ -72,3 +72,15 @@ export function showTamPicker(root, announcements, { onSelect }) {
   }
   card.append(explanation, picker);
 }
+
+export function showHandoff(root, playerName, { onReady }) {
+  const card = shell(root, `Passez le téléphone à ${playerName}`);
+  card.classList.add('handoff-card');
+  const explanation = document.createElement('p');
+  explanation.className = 'preview-reason';
+  explanation.textContent = 'Touchez le bouton seulement quand la bonne personne a le téléphone.';
+  const actions = document.createElement('div');
+  actions.className = 'preview-actions handoff-actions';
+  actions.append(button(`Je suis ${playerName}`, 'confirm-button', onReady));
+  card.append(explanation, actions);
+}

@@ -53,15 +53,27 @@ export function showEndgame(root, state, { onReplay }) {
   screen.setAttribute('role', 'dialog');
   screen.setAttribute('aria-label', 'Fin de la partie');
   const heading = document.createElement('h2');
-  heading.textContent = outcome.type === 'single'
-    ? 'Partie terminée'
-    : (outcome.type === 'tie'
-      ? 'Égalité parfaite'
-      : `${state.players[outcome.winnerIndex].name} gagne !`);
+  if (outcome.type === 'single') heading.textContent = 'Partie terminée';
+  else if (outcome.type === 'tie') heading.textContent = 'Égalité parfaite';
+  else if (outcome.type === 'ranking') {
+    heading.textContent = outcome.winnerIndexes.length > 1
+      ? 'Égalité en tête !'
+      : `${state.players[outcome.winnerIndexes[0]].name} gagne !`;
+  } else heading.textContent = `${state.players[outcome.winnerIndex].name} gagne !`;
   const summary = document.createElement('p');
-  summary.textContent = outcome.type === 'single'
-    ? `TOTAL général : ${totals[0].grandTotal} points`
-    : `${state.players[0].name} ${totals[0].grandTotal} — ${totals[1].grandTotal} ${state.players[1].name}`;
+  if (outcome.type === 'single') summary.textContent = `TOTAL général : ${totals[0].grandTotal} points`;
+  else if (outcome.type === 'ranking') summary.textContent = 'Classement final';
+  else summary.textContent = `${state.players[0].name} ${totals[0].grandTotal} — ${totals[1].grandTotal} ${state.players[1].name}`;
+  const ranking = document.createElement('ol');
+  ranking.className = 'final-ranking';
+  if (outcome.type === 'ranking') {
+    for (const entry of outcome.ranking) {
+      const item = document.createElement('li');
+      item.value = entry.rank;
+      item.textContent = `${state.players[entry.playerIndex].name} — ${entry.total} points`;
+      ranking.append(item);
+    }
+  }
   const sheets = document.createElement('div');
   sheets.className = 'final-sheets';
   sheets.classList.toggle('single-player', outcome.type === 'single');
@@ -71,7 +83,9 @@ export function showEndgame(root, state, { onReplay }) {
   replay.className = 'confirm-button replay-button';
   replay.textContent = 'Rejouer';
   replay.addEventListener('click', onReplay);
-  screen.append(heading, summary, sheets, replay);
+  screen.append(heading, summary);
+  if (outcome.type === 'ranking') screen.append(ranking);
+  screen.append(sheets, replay);
   root.append(screen);
 }
 

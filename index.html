@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#c5654a">
-    <meta name="description" content="Le Yam maison de Leslie, seule ou contre l’ordinateur.">
+    <meta name="description" content="Le Yam maison de Leslie, seule, contre l’ordinateur ou à plusieurs.">
     <title>Le Yam de Leslie</title>
     <link rel="manifest" href="./manifest.webmanifest">
     <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
@@ -26,7 +26,29 @@
             <strong>Contre l’ordinateur</strong>
             <span>Un adversaire cohérent et battable</span>
           </button>
+          <button class="mode-button" id="start-local" type="button">
+            <strong>À plusieurs sur ce téléphone</strong>
+            <span>De 2 à 5 personnes, à tour de rôle</span>
+          </button>
         </div>
+        <form class="local-setup" id="local-setup" hidden>
+          <div class="local-setup-heading">
+            <strong>Qui joue ?</strong>
+            <label>Nombre de joueurs
+              <select id="local-player-count">
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+              </select>
+            </label>
+          </div>
+          <div class="local-player-names" id="local-player-names"></div>
+          <div class="local-setup-actions">
+            <button class="secondary-button" id="cancel-local" type="button">Annuler</button>
+            <button class="confirm-button" type="submit">Commencer</button>
+          </div>
+        </form>
       </div>
     </section>
 
@@ -36,19 +58,12 @@
           <span class="eyebrow">Au tour de</span>
           <strong id="turn-name">Leslie</strong>
         </div>
-        <div class="score-summary" aria-label="Totaux de la partie">
-          <span><b id="human-total">0</b><small>Leslie</small></span>
-          <span id="score-separator" aria-hidden="true"><i>—</i></span>
-          <span id="computer-score"><b id="computer-total">0</b><small>Ordi</small></span>
-        </div>
+        <div class="score-summary" id="score-summary" aria-label="Totaux de la partie"></div>
         <button class="text-button" id="new-game" type="button">Nouvelle partie</button>
       </header>
 
       <section class="sheet-panel" aria-labelledby="sheet-title">
-        <div class="sheet-tabs" id="sheet-tabs" role="tablist" aria-label="Feuille consultée">
-          <button class="sheet-tab active" id="human-sheet-tab" type="button" role="tab" aria-selected="true" data-player-index="0">Leslie</button>
-          <button class="sheet-tab" id="computer-sheet-tab" type="button" role="tab" aria-selected="false" data-player-index="1">L’ordinateur</button>
-        </div>
+        <div class="sheet-tabs" id="sheet-tabs" role="tablist" aria-label="Feuille consultée"></div>
         <div class="sheet-heading">
           <span id="sheet-title">Feuille de Leslie</span>
           <span class="announcement-banner" id="announcement-banner" aria-live="polite"></span>

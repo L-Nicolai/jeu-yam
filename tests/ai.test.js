@@ -112,6 +112,78 @@ test('protection du Total — trois 6 vont dans la colonne qui franchit le seuil
   assert.deepEqual(chooseAiAction(state), { type: 'entry', column: 'free', category: 'six' });
 });
 
+test('U12 — un seul 2 n’est pas inscrit quand une case à moindre perte est jouable', () => {
+  const state = createGame();
+  const sheet = state.players[0].sheet;
+  for (const column of Object.values(sheet)) {
+    for (const category of Object.keys(column)) column[category] = 0;
+  }
+  sheet.free.one = null;
+  sheet.free.two = null;
+  state.turn = {
+    dice: [2, 3, 4, 5, 6],
+    held: [false, false, false, false, false],
+    rollCount: 3,
+    rerolled: true,
+    tamAnnouncement: null,
+  };
+  assert.deepEqual(chooseAiAction(state), { type: 'entry', column: 'free', category: 'one' });
+});
+
+test('U12 — une case ordonnée 3 à 6 n’est pas sacrifiée avant une petite case libre', () => {
+  const state = createGame();
+  const sheet = state.players[0].sheet;
+  for (const column of Object.values(sheet)) {
+    for (const category of Object.keys(column)) column[category] = 0;
+  }
+  sheet.descending.three = null;
+  sheet.free.one = null;
+  state.turn = {
+    dice: [2, 2, 4, 5, 6],
+    held: [false, false, false, false, false],
+    rollCount: 3,
+    rerolled: true,
+    tamAnnouncement: null,
+  };
+  assert.deepEqual(chooseAiAction(state), { type: 'entry', column: 'free', category: 'one' });
+});
+
+test('U13 — une annonce Tam-2 garde exclusivement les 2, jamais le plus gros groupe', () => {
+  assert.deepEqual(
+    chooseHeldDice([5, 5, 2, 3, 4], { category: 'two', reason: 'tam' }),
+    [false, false, true, false, false],
+  );
+
+  let state = createGame();
+  for (const category of Object.keys(state.players[0].sheet.dry)) {
+    state.players[0].sheet.dry[category] = 0;
+  }
+  state = rollDice(state, Math.random, [5, 5, 2, 3, 4]);
+  state = announceTam(state, 'two');
+  assert.deepEqual(chooseAiAction(state), {
+    type: 'reroll',
+    held: [false, false, true, false, false],
+    target: { category: 'two', reason: 'tam' },
+  });
+});
+
+test('U13 — une cible Quinte ne garde qu’un exemplaire de chaque valeur utile', () => {
+  const held = chooseHeldDice([2, 2, 3, 4, 6], { category: 'straight', reason: 'tam' });
+  assert.equal(held.filter(Boolean).length, 4);
+  assert.equal(held.filter((keep, index) => keep && [2, 2, 3, 4, 6][index] === 2).length, 1);
+});
+
+test('U13 — une cible Full conserve le brelan et la paire, ou amorce un groupe', () => {
+  assert.deepEqual(
+    chooseHeldDice([4, 4, 4, 2, 2], { category: 'full', reason: 'tam' }),
+    [true, true, true, true, true],
+  );
+  assert.deepEqual(
+    chooseHeldDice([1, 2, 3, 4, 6], { category: 'full', reason: 'tam' }),
+    [false, false, false, false, true],
+  );
+});
+
 test('légalité — 1 000 parties IA auto-jouées terminent sans blocage ni coup illégal', () => {
   for (let seed = 1; seed <= 1000; seed += 1) {
     const random = mulberry32(seed);
@@ -153,6 +225,36 @@ test('calibrage U9 — au moins 95 % de victoires sur 300 parties contre le joue
   assert.ok(wins >= 285, `seulement ${wins}/300 victoires`);
   assert.ok(average > 100 && average < 1500, `score moyen inattendu : ${average}`);
   t.diagnostic(`${wins}/300 victoires, score moyen ${average.toFixed(1)}`);
+});
+
+test('calibrage U12/U13 — plus de colonnes au seuil et au plus 1,5 Yam réussi par partie', (t) => {
+  const games = 200;
+  let upperColumnsAtThreshold = 0;
+  let successfulYams = 0;
+  let totalScore = 0;
+  for (let seed = 1; seed <= games; seed += 1) {
+    const random = mulberry32(seed * 7919);
+    let state = createGame();
+    while (!isGameOver(state)) state = playAiTurn(state, random);
+    for (const player of state.players) {
+      for (const column of Object.values(player.sheet)) {
+        const upperRaw = ['one', 'two', 'three', 'four', 'five', 'six']
+          .reduce((total, category) => total + column[category], 0);
+        if (upperRaw >= 60) upperColumnsAtThreshold += 1;
+        if (column.yam > 0) successfulYams += 1;
+      }
+    }
+    totalScore += getGameTotals(state).players
+      .reduce((total, player) => total + player.grandTotal, 0) / state.players.length;
+  }
+  const thresholdRate = upperColumnsAtThreshold / (games * 2 * 5);
+  const yamsPerGame = successfulYams / games;
+  const averageScore = totalScore / games;
+  assert.ok(thresholdRate >= 0.25, `seulement ${(thresholdRate * 100).toFixed(1)} % de colonnes au seuil`);
+  assert.ok(yamsPerGame <= 1.5, `${yamsPerGame.toFixed(2)} Yam réussis par partie`);
+  t.diagnostic(
+    `${(thresholdRate * 100).toFixed(1)} % de colonnes au seuil, ${yamsPerGame.toFixed(3)} Yam réussis par partie, score moyen ${averageScore.toFixed(1)}`,
+  );
 });
 
 test('toute décision IA est applicable par le même moteur de règles', () => {

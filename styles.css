@@ -45,6 +45,7 @@ button {
   background:
     radial-gradient(circle at 50% 15%, rgb(197 101 74 / 14%), transparent 34%),
     var(--cream);
+  overflow: auto;
 }
 
 .welcome-card {
@@ -122,6 +123,57 @@ button {
   color: #fff5ef;
 }
 
+.local-setup {
+  margin-top: 20px;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+  text-align: left;
+}
+
+.local-setup-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.local-setup-heading label,
+.local-player-names label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--muted);
+  font-family: Inter, ui-rounded, system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.local-setup select,
+.local-setup input {
+  min-height: 39px;
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  padding: 7px 9px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+}
+
+.local-player-names {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  margin-top: 13px;
+}
+
+.local-setup-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+}
+
 .app-shell {
   width: min(100%, 1100px);
   height: 100dvh;
@@ -167,8 +219,21 @@ button {
 .score-summary {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 5px;
+  max-width: 48vw;
+  overflow-x: auto;
+  scrollbar-width: none;
   text-align: center;
+}
+
+.score-summary::-webkit-scrollbar,
+.sheet-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.score-summary span {
+  min-width: 42px;
+  flex: 0 0 auto;
 }
 
 .score-summary b {
@@ -203,14 +268,16 @@ button {
 }
 
 .sheet-tabs {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
   gap: 4px;
+  overflow-x: auto;
   padding: 0 2px 4px;
+  scrollbar-width: none;
 }
 
 .sheet-tab {
-  min-width: 0;
+  min-width: min(104px, 43vw);
+  flex: 1 0 min(104px, 43vw);
   border: 1px solid var(--line);
   border-radius: 8px 8px 3px 3px;
   background: #f5eee7;
@@ -547,6 +614,21 @@ button {
   cursor: pointer;
 }
 
+.handoff-card {
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
+  text-align: center;
+}
+
+.handoff-card .preview-reason {
+  margin-top: 8px;
+}
+
+.handoff-actions {
+  justify-content: center;
+}
+
 .computer-thinking .turn-panel {
   opacity: 0.84;
 }
@@ -585,6 +667,21 @@ button {
 .final-sheets.single-player {
   width: min(100%, 460px);
   grid-template-columns: 1fr;
+}
+
+.final-ranking {
+  width: min(100%, 420px);
+  margin: -8px auto 18px;
+  padding: 10px 14px 10px 42px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  text-align: left;
+  font-weight: 800;
+}
+
+.final-ranking li {
+  padding: 3px 0;
 }
 
 .final-sheet {

@@ -1,6 +1,6 @@
 # Le Yam de Leslie
 
-Une version téléphone du Yam familial de Leslie, jouable seule contre un ordinateur correct mais battable. Les règles et les barèmes sont ceux de la feuille maison — pas ceux du Yahtzee classique.
+Une version téléphone du Yam familial de Leslie, jouable seule, contre un ordinateur correct mais battable, ou à 2 à 5 personnes sur le même téléphone. Les règles et les barèmes sont ceux de la feuille maison — pas ceux du Yahtzee classique.
 
 ## Jouer
 
@@ -32,6 +32,8 @@ node --test tests/
 ```
 
 Les icônes peuvent être régénérées, toujours sans paquet externe, avec `node scripts/generate-icons.js`.
+
+L’équité des dés — faces et combinaisons rares — est vérifiée statistiquement à chaque exécution des tests.
 
 ## Publier une mise à jour
 

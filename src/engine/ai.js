@@ -61,7 +61,15 @@ function entryValue(state, entry, rollCount) {
 }
 
 function bestEntry(state, entries, rollCount) {
-  return [...entries].sort((left, right) => {
+  const protectedUpper = (entry) => {
+    if (!UPPER_KEYS.includes(entry.category)) return false;
+    const face = UPPER_KEYS.indexOf(entry.category) + 1;
+    const count = entry.points / face;
+    return (face >= 3 && count < 3) || (face === 2 && count < 2);
+  };
+  const saferEntries = entries.filter((entry) => !protectedUpper(entry));
+  const candidates = saferEntries.length ? saferEntries : entries;
+  return [...candidates].sort((left, right) => {
     const difference = entryValue(state, right, rollCount) - entryValue(state, left, rollCount);
     if (difference) return difference;
     return right.points - left.points;
@@ -92,20 +100,23 @@ function tamTarget(state, announcements) {
 
 function bestRequiredTamAnnouncement(state, announcements) {
   return [...announcements].sort((left, right) => {
-    const leftScore = scoreCategory(left.category, state.turn.dice).points - CATEGORY_COST[left.category];
-    const rightScore = scoreCategory(right.category, state.turn.dice).points - CATEGORY_COST[right.category];
+    const leftScore = targetPotential(state.turn.dice, left.category);
+    const rightScore = targetPotential(state.turn.dice, right.category);
     return rightScore - leftScore;
   })[0];
 }
 
-export function chooseHeldDice(dice) {
-  const counts = countsFor(dice);
-  const groups = [...counts.entries()].sort((left, right) => right[1] - left[1] || right[0] - left[0]);
-  if (groups[0][1] >= 2) {
-    const target = groups[0][0];
-    return dice.map((die) => die === target);
-  }
+function normalizedTarget(target) {
+  if (!target) return null;
+  return typeof target === 'string' ? { category: target, reason: 'opportunity' } : target;
+}
 
+function largestGroup(counts) {
+  return [...counts.entries()].sort((left, right) => right[1] - left[1] || right[0] - left[0])[0];
+}
+
+function straightHolds(dice) {
+  const counts = countsFor(dice);
   const sequences = [[1, 2, 3, 4, 5], [2, 3, 4, 5, 6]];
   const sequence = sequences.sort((left, right) => {
     const inRight = right.filter((face) => counts.has(face)).length;
@@ -118,6 +129,90 @@ export function chooseHeldDice(dice) {
     kept.add(die);
     return true;
   });
+}
+
+function targetPotential(dice, category) {
+  const counts = countsFor(dice);
+  const groups = [...counts.values()].sort((left, right) => right - left);
+  if (UPPER_KEYS.includes(category)) {
+    const face = UPPER_KEYS.indexOf(category) + 1;
+    return (counts.get(face) ?? 0) * face * 8 - Math.max(0, 3 - (counts.get(face) ?? 0)) * face;
+  }
+  if (category === 'straight') return straightHolds(dice).filter(Boolean).length * 12;
+  if (category === 'full') return (groups[0] * 10) + ((groups[1] ?? 0) * 8);
+  if (category === 'fourKind') return groups[0] * 13;
+  if (category === 'yam') return groups[0] * 9;
+  if (category === 'plus') return dice.filter((die) => die >= 4).reduce((total, die) => total + die, 0) * 2;
+  if (category === 'minus') return dice.filter((die) => die <= 3).reduce((total, die) => total + (7 - die), 0);
+  if (category === 'middle') return dice.filter((die) => die >= 3 && die <= 5).length * 7;
+  return 0;
+}
+
+export function chooseTurnTarget(state, legal = getLegalActions(state)) {
+  if (state.turn.tamAnnouncement) {
+    return { category: state.turn.tamAnnouncement, reason: 'tam' };
+  }
+
+  const available = new Set(legal.entries.map(({ category }) => category));
+  const dice = state.turn.dice;
+  const counts = countsFor(dice);
+  const [groupFace, groupSize] = largestGroup(counts);
+  const upperCategory = UPPER_KEYS[groupFace - 1];
+  if (available.has('straight') && straightHolds(dice).filter(Boolean).length >= 4) {
+    return { category: 'straight', reason: 'opportunity' };
+  }
+  if (available.has('full')) {
+    const groups = [...counts.values()].sort((left, right) => right - left);
+    if (groups[0] >= 3 || (groups[0] === 2 && groups[1] === 2)) {
+      return { category: 'full', reason: 'opportunity' };
+    }
+  }
+  if (available.has('fourKind') && groupSize >= 3) {
+    return { category: 'fourKind', face: groupFace, reason: 'opportunity' };
+  }
+  if (available.has(upperCategory) && groupSize >= 2) {
+    return { category: upperCategory, face: groupFace, reason: 'upper-total' };
+  }
+
+  const candidates = [...available]
+    .filter((category) => category !== 'yam')
+    .map((category) => ({ category, value: targetPotential(dice, category) }))
+    .sort((left, right) => right.value - left.value || CATEGORY_COST[left.category] - CATEGORY_COST[right.category]);
+  return candidates.length ? { category: candidates[0].category, reason: 'opportunity' } : null;
+}
+
+export function chooseHeldDice(dice, requestedTarget = null) {
+  const counts = countsFor(dice);
+  const target = normalizedTarget(requestedTarget);
+  const category = target?.category;
+
+  if (UPPER_KEYS.includes(category)) {
+    const face = UPPER_KEYS.indexOf(category) + 1;
+    return dice.map((die) => die === face);
+  }
+  if (category === 'straight') return straightHolds(dice);
+  if (category === 'full') {
+    const groupedFaces = [...counts.entries()]
+      .filter(([, count]) => count >= 2)
+      .sort((left, right) => right[1] - left[1] || right[0] - left[0]);
+    if (groupedFaces.length) {
+      const faces = new Set(groupedFaces.slice(0, 2).map(([face]) => face));
+      return dice.map((die) => faces.has(die));
+    }
+    const face = largestGroup(counts)[0];
+    return dice.map((die) => die === face);
+  }
+  if (category === 'fourKind' || category === 'yam') {
+    const face = target.face ?? largestGroup(counts)[0];
+    return dice.map((die) => die === face);
+  }
+  if (category === 'plus') return dice.map((die) => die >= 4);
+  if (category === 'minus') return dice.map((die) => die <= 3);
+  if (category === 'middle') return dice.map((die) => die >= 3 && die <= 5);
+
+  const [groupFace, groupSize] = largestGroup(counts);
+  if (groupSize >= 2) return dice.map((die) => die === groupFace);
+  return straightHolds(dice);
 }
 
 export function chooseAiAction(state) {
@@ -144,7 +239,8 @@ export function chooseAiAction(state) {
   }
 
   if (legal.canReroll) {
-    return { type: 'reroll', held: chooseHeldDice(state.turn.dice) };
+    const target = chooseTurnTarget(state, legal);
+    return { type: 'reroll', held: chooseHeldDice(state.turn.dice, target), target };
   }
 
   if (!best && legal.announcements.length) {
