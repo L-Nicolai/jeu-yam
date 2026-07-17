@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#c5654a">
+    <meta name="description" content="Le Yam maison de Leslie, en solo contre l’ordinateur.">
+    <title>Le Yam de Leslie</title>
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="app-shell" id="app">
+      <header class="game-header">
+        <div class="turn-summary">
+          <span class="eyebrow">Au tour de</span>
+          <strong id="turn-name">Leslie</strong>
+        </div>
+        <div class="score-summary" aria-label="Totaux de la partie">
+          <span><b id="human-total">0</b><small>Leslie</small></span>
+          <i aria-hidden="true">—</i>
+          <span><b id="computer-total">0</b><small>Ordi</small></span>
+        </div>
+        <button class="text-button" id="new-game" type="button">Nouvelle partie</button>
+      </header>
+
+      <section class="sheet-panel" aria-labelledby="sheet-title">
+        <div class="sheet-heading">
+          <span id="sheet-title">Feuille de Leslie</span>
+          <span class="announcement-banner" id="announcement-banner" aria-live="polite"></span>
+          <span id="turn-progress">0 / 65</span>
+        </div>
+        <div class="score-grid" id="score-grid"></div>
+      </section>
+
+      <section class="turn-panel" aria-label="Zone de lancer">
+        <p class="turn-message" id="turn-message" aria-live="polite">Lancez les cinq dés pour commencer.</p>
+        <div class="dice-row" id="dice-row"></div>
+        <button class="primary-button" id="roll-button" type="button">Lancer les dés</button>
+      </section>
+    </main>
+    <div id="overlay-root"></div>
+    <script type="module" src="./src/ui/app.js"></script>
+  </body>
+</html>
