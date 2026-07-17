@@ -41,7 +41,8 @@ Ce solo sert de banc d'essai : le multijoueur en ligne en direct, chacun sur son
 ### Actors
 
 - A1. Leslie — la joueuse, sur son téléphone (ou un ordinateur).
-- A2. L'ordinateur — adversaire automatique intégré à l'appli ; il joue la même feuille, avec exactement les mêmes règles et contraintes que la joueuse. Absent du mode « Jouer seule » (R29).
+- A2. L'ordinateur — adversaire automatique intégré à l'appli ; il joue la même feuille, avec exactement les mêmes règles et contraintes que la joueuse. Absent des modes « Jouer seule » (R29) et « À plusieurs » (R31).
+- A3. Les joueuses et joueurs locaux du mode « À plusieurs » (R31) — 2 à 5 humains sur le même téléphone, à tour de rôle.
 
 ### Requirements
 
@@ -75,7 +76,7 @@ Ce solo sert de banc d'essai : le multijoueur en ligne en direct, chacun sur son
 - R20. Les annonces Tam des deux joueurs s'affichent à l'écran (ex. « L'ordinateur annonce Tam : Carré »).
 - R21. Ambiance visuelle épurée et chaleureuse : fond crème, encre chaude, accent terracotta ; palette claire unique en v1.
 - R22. Les dés s'animent au lancer ; un Yam réussi déclenche une brève célébration visuelle ; la v1 est sans sons.
-- R23. Pendant le tour de l'ordinateur, l'écran bascule sur sa feuille et ses dés : chaque étape (lancer, dés gardés, annonce, inscription) s'affiche à un rythme lisible — environ une seconde par lancer ou garde, deux secondes et demie sur l'inscription avec la case surlignée ; un toucher passe à l'étape suivante. Son niveau : cohérent et battable — il protège son Total (60) (l'enjeu du ± 5 par point d'écart au seuil), n'annonce pas de Tam hasardeux, ne gâche ni ses colonnes ordonnées ni ses grosses cases ; sans calcul optimal.
+- R23. Pendant le tour de l'ordinateur, l'écran bascule sur sa feuille et ses dés : chaque étape (lancer, dés gardés, annonce, inscription) s'affiche à un rythme lisible — environ une seconde par lancer ou garde, deux secondes et demie sur l'inscription avec la case surlignée ; un toucher passe à l'étape suivante. Son niveau : cohérent et battable — il protège son Total (60) (l'enjeu du ± 5 par point d'écart au seuil : jamais un chiffre 3-6 inscrit ou barré à bas coût quand une case à moindre perte existe, viser au moins 3 dés de la valeur), il joue vers une cible explicite (après une annonce Tam, ses gardes servent exclusivement la case annoncée — face annoncée → garder cette face, quinte → garder des valeurs uniques), il n'annonce volontairement un Tam que sur un coup déjà servi ou quasi, et il ne thésaurise pas ses cases Yam ; sans calcul optimal.
 - R24. Sauvegarde automatique locale à chaque action ; à l'ouverture, la partie en cours reprend là où elle en était ; une seule partie en cours à la fois ; « Nouvelle partie » exige une confirmation avant d'effacer.
 - R25. Écran de fin de partie : les deux feuilles détaillées, les totaux, le vainqueur — ou l'égalité, affichée comme telle quand les deux TOTAL généraux sont exactement égaux — et un bouton pour rejouer.
 
@@ -83,9 +84,10 @@ Ce solo sert de banc d'essai : le multijoueur en ligne en direct, chacun sur son
 
 - R26. Le moteur manipule des « joueurs » interchangeables — humaine locale, ordinateur, demain joueur distant — et un état de partie intégralement transportable, pour que le multi en direct soit un ajout, pas une refonte.
 - R27. Dès la v1, le jeu est accessible par une adresse web depuis n'importe quel téléphone, sans installation ni manipulation technique.
-- R28. Au démarrage et après « Nouvelle partie », l'appli propose le choix du mode : « Jouer seule » (R29) ou « Contre l'ordinateur » ; une partie en cours est reprise directement sans passer par cet écran (R24). Le multi en ligne rejoindra ce même écran de choix ; le solo contre l'ordinateur reste un mode permanent.
+- R28. Au démarrage et après « Nouvelle partie », l'appli propose le choix du mode : « Jouer seule » (R29), « Contre l'ordinateur », ou « À plusieurs sur ce téléphone » (R31) ; une partie en cours est reprise directement sans passer par cet écran (R24). Le multi en ligne rejoindra ce même écran de choix ; chaque mode reste permanent.
 - R29. Mode « Jouer seule » : Leslie remplit sa feuille sans adversaire ; l'en-tête n'affiche que son total ; l'écran de fin présente sa feuille détaillée et son TOTAL général, sans vainqueur ; toutes les règles (colonnes, Tam, Sèche, barème, garde-fous) s'appliquent à l'identique.
-- R30. L'équité des dés est prouvée par la suite de tests : contrôle statistique d'uniformité sur au moins 60 000 tirages, écart borné par face.
+- R30. L'équité des dés est prouvée par la suite de tests : contrôle statistique d'uniformité sur au moins 60 000 tirages, écart borné par face ; et contrôle des fréquences théoriques des combinaisons sur les premiers lancers (Yam sec ≈ 0,08 %, carré servi ≈ 1,9 %, quinte servie ≈ 3,1 %), à tolérances larges.
+- R31. Mode « À plusieurs sur ce téléphone » : 2 à 5 joueuses et joueurs nommés par leur prénom, chacun sa feuille complète, mêmes règles ; entre deux tours, un écran de passage (« Passez le téléphone à {prénom} ») évite les lancers accidentels ; des onglets donnent accès à la feuille de chacun (la barre d'onglets peut défiler, la grille jamais) ; l'écran de fin affiche le classement complet, égalités comprises.
 
 ### Key Flows
 
@@ -137,7 +139,7 @@ flowchart TB
 
 **Suite immédiate (hors v1, dès le solo validé) :** multijoueur en ligne en direct, chacun sur son téléphone — la v1 le prépare (R16, R26, R27) sans l'inclure ; son cadrage détaillé (invitations ou code de partie, pseudos, nombre de joueurs, déconnexions) fera l'objet de son propre brainstorm éclair.
 
-Reportés à plus tard : multijoueur local sur le même écran ; niveaux de difficulté réglables ; mode sombre ; sons et musique ; historique et statistiques des parties ; application native App Store.
+Reportés à plus tard : niveaux de difficulté réglables ; mode sombre ; sons et musique ; historique et statistiques des parties ; application native App Store.
 
 ### Dependencies / Assumptions
 
@@ -359,6 +361,46 @@ L'arborescence est une déclaration de forme, pas une camisole : l'implémenteur
 - **Test scenarios :** partie « seule » générative complète (65 tours) sans blocage ; fin de partie = feuille + total, sans vainqueur ; sauvegarde/reprise du mode ; un payload v1 existant est restauré en mode contre-ordinateur.
 - **Verification :** les deux modes se jouent de bout en bout ; une sauvegarde v1 antérieure reprend sans erreur.
 
+### U12. IA — le contrat de la partie haute
+
+- **Goal :** un ordinateur qui respecte l'enjeu du Total (60) comme une joueuse expérimentée.
+- **Requirements :** R23 ; retours de jeu du 2026-07-18 (point 1).
+- **Dependencies :** U9.
+- **Files :** `src/engine/ai.js`, `tests/ai.test.js`.
+- **Approach :** valoriser une inscription en partie haute par sa contribution au seuil : inscrire la valeur v avec n dés rapporte n × v mais, sous le seuil, « coûte » environ (3 − n) × v × 5 d'espérance — donc jamais un chiffre 3 à 6 avec moins de 3 dés tant qu'une alternative existe ; ordre de sacrifice au barrage par perte minimale (typiquement : as, deux, cases déjà compromises, Yam tardif) — jamais barrer 3-6 en colonne ordonnée quand une case à moindre perte est légale ce tour.
+- **Test scenarios :** avec un seul dé de 2 au dernier lancer et une alternative légale, il n'inscrit jamais « deux » pour 2 points ; jamais de barrage de 3/4/5/6 quand une case à moindre perte est jouable ; sur 200 parties (germe fixé), la part de colonnes complétées avec Total (60) ≥ 60 augmente nettement par rapport à l'ancienne IA (seuil chiffré fixé au premier calibrage).
+- **Verification :** `node --test tests/ai.test.js` vert ; en jouant, il ne « gâche » plus sa partie haute.
+
+### U13. IA — jouer vers sa cible (Tam compris)
+
+- **Goal :** corriger le bug de cohérence : les dés gardés doivent servir la cible du tour, notamment après une annonce Tam.
+- **Requirements :** R23 ; retours du 2026-07-18 (points 4 et 5). Bug identifié : `chooseHeldDice(dice)` ignore `state.turn.tamAnnouncement` et garde systématiquement le plus gros groupe de dés identiques.
+- **Dependencies :** U9.
+- **Files :** `src/engine/ai.js`, `tests/ai.test.js`.
+- **Approach :** introduire une cible de tour explicite : après annonce Tam, c'est la case annoncée ; sinon la meilleure opportunité courante. `chooseHeldDice(dice, target)` garde selon la cible — face annoncée → garder exclusivement cette face ; quinte → garder des valeurs uniques consécutives ; full → brelan + paire ; trio → hauts ou bas selon la case. La case Yam est une cible comme une autre : inscrite quand servie, barrée quand c'est la moindre perte tardive, jamais thésaurisée ni chassée par défaut. Annonces Tam volontaires uniquement sur coup déjà servi ou quasi ; annonces forcées (R8) : choisir la meilleure espérance puis jouer vers elle.
+- **Test scenarios :** annonce Tam-deux avec 5-5-2-x-y → il garde le 2 et jamais les 5 ; annonce Tam-quinte → il ne garde jamais deux dés identiques ; 1 000 parties légales sans blocage ; sur 200 parties (germe fixé), l'IA inscrit en moyenne au plus ~1,5 Yam réussi par partie — la fin de l'obsession du Yam.
+- **Verification :** `node --test tests/ai.test.js` vert ; ses gardes se lisent comme des intentions.
+
+### U14. Mode « À plusieurs sur ce téléphone »
+
+- **Goal :** le Yam des soirées — 2 à 5 humains, un seul téléphone qui passe de main en main.
+- **Requirements :** R28, R31.
+- **Dependencies :** U1, U10.
+- **Files :** `src/ui/app.js`, `src/ui/grid.js`, `src/ui/endgame.js`, `src/engine/game.js` (partie à N joueurs, classement), `src/storage.js`, `index.html`, `styles.css`, `tests/game.test.js`.
+- **Approach :** troisième option de l'écran d'accueil : nombre de joueurs (2 à 5) puis prénoms ; moteur généralisé à N joueurs (le classement final gère les égalités) ; entre deux joueurs, écran de passage « Passez le téléphone à {prénom} » avec un grand bouton, pour éviter tout lancer accidentel ; onglets par joueur (barre défilante si besoin — la grille, elle, ne défile jamais) ; en-tête : joueur au trait + totaux compacts ; écran de fin : classement complet et feuilles consultables ; sauvegarde version 3 avec migrations douces (v1 → contre l'ordinateur, v2 → inchangé).
+- **Test scenarios :** partie générative à 3 joueurs (195 tours) sans blocage ; classement final avec égalité exacte ; migrations v1 et v2 restaurées correctement ; reprise mi-partie au bon joueur, écran de passage compris.
+- **Verification :** partie à plusieurs jouée de bout en bout au doigt ; une sauvegarde v2 antérieure reprend sans erreur.
+
+### U15. Équité étendue aux combinaisons
+
+- **Goal :** prouver que même les événements rares tombent à leur taux théorique.
+- **Requirements :** R30 ; retours du 2026-07-18 (point 3).
+- **Dependencies :** U11.
+- **Files :** `tests/fairness.test.js`, `README.md` (une phrase).
+- **Approach :** sur 200 000 premiers lancers simulés via `rollDice` : Yam sec ≈ 0,077 %, carré servi ≈ 1,93 %, quinte servie ≈ 3,09 % — tolérance relative de ± 40 %, assez large pour la variance, assez serrée pour exclure tout biais ; une phrase du README l'explique (« l'équité des dés est vérifiée statistiquement à chaque exécution des tests »).
+- **Test scenarios :** les trois fréquences dans leurs fourchettes sur 200 000 tirages.
+- **Verification :** `node --test tests/fairness.test.js` vert.
+
 ### U11. Preuve d'équité des dés
 
 - **Goal :** transformer la confiance dans les dés en preuve automatique.
@@ -385,6 +427,9 @@ L'arborescence est une déclaration de forme, pas une camisole : l'implémenteur
 | IA cohérente | ≥ 95 % de victoires sur 300 parties vs joueur aléatoire (germe fixé) ; jamais de Tam sur simple brelan | U9 | clôture de U9 |
 | Mode « Jouer seule » | partie générative complète à un joueur + smoke écran d'accueil et migration payload v1 | U10 | clôture de U10 |
 | Équité des dés | test statistique : 60 000 tirages, chaque face à 1/6 ± 2 % | U11 | clôture de U11 |
+| IA — partie haute et cibles | jamais un chiffre 3-6 à moins de 3 dés si alternative ; gardes conformes à l'annonce Tam ; ≤ ~1,5 Yam inscrit par partie en moyenne (germe fixé) | U12, U13 | clôture de U13 |
+| Mode À plusieurs | partie générative 3 joueurs (195 tours) + migrations v1/v2 + smoke passage de téléphone | U14 | clôture de U14 |
+| Équité des combinaisons | 200 000 premiers lancers : Yam sec, carré et quinte servis à leur taux théorique ± 40 % relatif | U15 | clôture de U15 |
 
 ---
 
@@ -397,4 +442,4 @@ L'arborescence est une déclaration de forme, pas une camisole : l'implémenteur
 - Aucune dépendance d'exécution : zéro paquet npm (le `package.json` ne déclare que `"type": "module"`), pas de bundler, pas de framework ; le dépôt ne contient ni code mort ni essais abandonnés.
 - `README.md` explique en français simple : jouer, épingler sur téléphone, lancer les tests, publier.
 - Le moteur ne référence jamais le DOM (vérifiable par lecture : aucun `document`/`window` sous `src/engine/`).
-- L'écran d'accueil propose « Jouer seule » et « Contre l'ordinateur » ; le tour de l'ordinateur se suit sur sa feuille à un rythme lisible ; l'équité des dés est prouvée par la suite de tests.
+- L'écran d'accueil propose « Jouer seule », « Contre l'ordinateur » et « À plusieurs sur ce téléphone » ; le tour de l'ordinateur se suit sur sa feuille à un rythme lisible ; ses gardes servent toujours sa cible (annonces Tam comprises) ; l'équité des dés — faces et combinaisons — est prouvée par la suite de tests.
