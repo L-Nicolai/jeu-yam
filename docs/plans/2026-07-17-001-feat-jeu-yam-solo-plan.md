@@ -64,19 +64,19 @@ Ce solo sert de banc d'essai : le multijoueur en ligne en direct, chacun sur son
 - R11. Quinte : exige 5 dés consécutifs (1-2-3-4-5 ou 2-3-4-5-6) ; score = somme des 5 dés + 30 (soit 45 ou 50).
 - R12. Full : 3 dés identiques + 2 dés identiques ; score = somme des 5 dés + 20 ; un Yam est accepté comme Full (somme des 5 dés + 20 ; ex. cinq 6 → 50).
 - R13. Carré : score = somme des 4 dés identiques + 40 (carré de 6 → 64 ; carré d'as → 44) ; un Yam inscrit au Carré = somme des 5 dés + 40 (Yam de 2 → 50).
-- R14. Cases +, Moyen, − : score = somme des 5 dés ; dans chaque colonne, l'inégalité + > Moyen > − doit être vraie entre les cases de ce trio déjà inscrites au moment d'inscrire, sinon la case vaut 0 ; leur ordre interne est libre là où la colonne le permet.
+- R14. Cases +, Moyen, − : score = somme des 5 dés ; dans chaque colonne, l'inégalité + > Moyen > − doit être vraie entre toutes les cases déjà inscrites du trio au moment d'inscrire — y compris directement entre + et − quand Moyen est encore vide (+ = 11 avec − = 20 est interdit) ; toute inscription qui la viole vaut 0 ; leur ordre interne est libre là où la colonne le permet.
 - R15. Yam : 5 dés identiques ; score = somme des 5 dés + 60.
 - R16. Le moteur de règles (dés, contraintes de colonnes, barème, tours) est strictement séparé de l'interface, de sorte que le mode multijoueur puisse le réutiliser sans réécriture.
 
 **Interface et expérience**
 
 - R17. Interface en français, conçue pour l'écran du téléphone (taille iPhone au minimum) et le jeu au doigt ; l'affichage s'adapte automatiquement aux écrans plus grands — iPad, ordinateur.
-- R18. Une fine bande d'en-tête (tour en cours, totaux des deux joueurs, accès « Nouvelle partie ») surmonte la grille complète des 5 colonnes, qui reste visible pendant le jeu ; les dés et la commande de lancer occupent le bas de l'écran ; la grille s'adapte à la taille de l'écran et ne défile jamais. Deux onglets au-dessus de la grille permettent de consulter à tout moment la feuille de chaque joueur (masqués en mode « Jouer seule »).
-- R19. Toucher une case affiche le détail des points qu'elle rapporterait avec les dés actuels et demande confirmation avant d'inscrire ; les cases jouables avec les dés du moment sont signalées visuellement. Toucher une autre case remplace l'aperçu en cours ; toucher hors de la grille (ou « Annuler ») ferme l'aperçu sans rien inscrire.
+- R18. Une fine bande d'en-tête (tour en cours, totaux des deux joueurs, accès « Nouvelle partie ») surmonte la grille complète des 5 colonnes, qui reste visible pendant le jeu ; les dés et la commande de lancer occupent le bas de l'écran ; la grille s'adapte à la taille de l'écran et ne défile jamais. Deux onglets au-dessus de la grille permettent de consulter à tout moment la feuille de chaque joueur (masqués en mode « Jouer seule ») ; tout lancer de dés du joueur au trait ramène automatiquement l'affichage sur sa propre feuille.
+- R19. Toucher une case affiche le détail des points qu'elle rapporterait avec les dés actuels et demande confirmation avant d'inscrire ; les cases jouables avec les dés du moment sont signalées visuellement. Toucher une autre case remplace l'aperçu en cours ; toucher hors de la grille (ou « Annuler ») ferme l'aperçu sans rien inscrire. Quand la case vaudrait 0 (contrat manqué ou contrainte violée), l'aperçu ne propose qu'une seule action d'inscription — « Inscrire 0 » — sans bouton « Barrer » redondant ; le barrage volontaire (« Barrer · 0 ») n'apparaît que pour une case qui rapporterait des points.
 - R20. Les annonces Tam des deux joueurs s'affichent à l'écran (ex. « L'ordinateur annonce Tam : Carré »).
 - R21. Ambiance visuelle épurée et chaleureuse : fond crème, encre chaude, accent terracotta ; palette claire unique en v1.
 - R22. Les dés s'animent au lancer ; un Yam réussi déclenche une brève célébration visuelle ; la v1 est sans sons.
-- R23. Pendant le tour de l'ordinateur, l'écran bascule sur sa feuille et ses dés : chaque étape (lancer, dés gardés, annonce, inscription) s'affiche à un rythme lisible — environ une seconde par lancer ou garde, deux secondes et demie sur l'inscription avec la case surlignée ; un toucher passe à l'étape suivante. Son niveau : cohérent et battable — il protège son Total (60) (l'enjeu du ± 5 par point d'écart au seuil : jamais un chiffre 3-6 inscrit ou barré à bas coût quand une case à moindre perte existe, viser au moins 3 dés de la valeur), il joue vers une cible explicite (après une annonce Tam, ses gardes servent exclusivement la case annoncée — face annoncée → garder cette face, quinte → garder des valeurs uniques), il n'annonce volontairement un Tam que sur un coup déjà servi ou quasi, et il ne thésaurise pas ses cases Yam ; sans calcul optimal.
+- R23. Pendant le tour de l'ordinateur, l'écran bascule sur sa feuille et ses dés : chaque étape (lancer, dés gardés, annonce, inscription) s'affiche à un rythme lisible — environ une seconde par lancer ou garde, deux secondes et demie sur l'inscription avec la case surlignée ; un toucher passe à l'étape suivante. Son niveau : cohérent et battable — il protège son Total (60) (l'enjeu du ± 5 par point d'écart au seuil : jamais un chiffre 3-6 inscrit ou barré à bas coût quand une case à moindre perte existe, viser au moins 3 dés de la valeur), il joue vers une cible explicite (après une annonce Tam, ses gardes servent exclusivement la case annoncée — face annoncée → garder cette face, quinte → garder des valeurs uniques), ses annonces Tam sont décidées à l'espérance (oser quand le jeu s'y prête, au fil de la partie — la colonne Tam n'est jamais thésaurisée jusqu'à la fin), et il ne thésaurise pas ses cases Yam. Sa stratégie s'appuie sur une simulation d'espérances légère (Monte-Carlo par décision, temps de réflexion imperceptible) plutôt que sur des barèmes figés. Calibrage sur l'échelle familiale de référence (moins de 1 200 = partie faible ; 1 200-1 400 = bonne ; record de Leslie : 1 850) : score moyen de l'ordinateur entre 1 050 et 1 350 — compétitif, jamais écrasant.
 - R24. Sauvegarde automatique locale à chaque action ; à l'ouverture, la partie en cours reprend là où elle en était ; une seule partie en cours à la fois ; « Nouvelle partie » exige une confirmation avant d'effacer.
 - R25. Écran de fin de partie : les deux feuilles détaillées, les totaux, le vainqueur — ou l'égalité, affichée comme telle quand les deux TOTAL généraux sont exactement égaux — et un bouton pour rejouer.
 
@@ -128,11 +128,12 @@ flowchart TB
 - AE6. **Covers R14, R19.** Given Moyen = 18 déjà inscrit dans une colonne, When la joueuse touche la case + avec des dés totalisant 17, Then l'aperçu signale que la case vaudrait 0 avant toute confirmation.
 - AE7. **Covers R3.** Given la case « 2 » de la Descendante non remplie, Then la case « 3 » de la Descendante n'est pas inscriptible.
 - AE8. **Covers R8.** Given une fin de partie où seules des cases Sèche restent jouables, Then la relance est désactivée avec un message d'explication ; Given une fin de partie où seules des cases Tam restent jouables, Then l'annonce est proposée d'office après le 1ᵉʳ lancer.
+- AE9. **Covers R14.** Given − = 20 inscrit et Moyen encore vide dans une colonne, When un joueur (humain ou ordinateur) prévisualise ou inscrit + avec des dés totalisant 11, Then la case vaut 0 avec la raison « + doit être strictement supérieur à − » — jamais 11 points inscrits.
 
 ### Success Criteria
 
 - Une partie complète (65 tours par joueur) se joue au doigt sur téléphone, sans blocage et sans écart de règle par rapport à la feuille de référence.
-- En jouant bien, Leslie gagne régulièrement contre l'ordinateur — mais pas à tous les coups.
+- En jouant bien, Leslie gagne régulièrement contre l'ordinateur — mais pas à tous les coups. Échelle de référence (règles maison) : moins de 1 200 = partie faible ; 1 200 à 1 400 = bonne partie ; au-delà = très bonne ; record personnel de Leslie : 1 850.
 - Fermer puis rouvrir l'appli en cours de partie ne perd jamais l'état du jeu en usage courant. La limite connue d'iPhone/Safari (stockage web effaçable après ~7 jours sans visite du site) est traitée au plan technique : persistance renforcée et proposition d'épingler le jeu sur l'écran d'accueil.
 
 ### Scope Boundaries
@@ -401,6 +402,36 @@ L'arborescence est une déclaration de forme, pas une camisole : l'implémenteur
 - **Test scenarios :** les trois fréquences dans leurs fourchettes sur 200 000 tirages.
 - **Verification :** `node --test tests/fairness.test.js` vert.
 
+### U16. Correction du trio : transitivité de + > Moyen > −
+
+- **Goal :** corriger le bug signalé en partie réelle le 2026-07-18 : + = 11 accepté avec − = 20 quand Moyen est vide.
+- **Requirements :** R14, AE9. Bug localisé : `trioConstraint` dans `src/engine/rules.js` ne compare que les paires adjacentes (+/Moyen et Moyen/−), jamais + et − directement.
+- **Dependencies :** U1.
+- **Files :** `src/engine/rules.js`, `tests/rules.test.js`.
+- **Approach :** ajouter la vérification directe + > − quand les deux sont concernés (inscription de l'un avec l'autre déjà posé, Moyen vide ou non) ; message : « + doit être strictement supérieur à − ». Les valeurs déjà inscrites dans des parties sauvegardées restent telles quelles (historique).
+- **Test scenarios :** AE9 exactement (préviews et inscriptions, humain et IA) ; symétrique : − = 18 refusé comme valide quand + = 15 ; les cas adjacents existants restent couverts ; parties génératives toujours sans blocage.
+- **Verification :** `node --test tests/rules.test.js` vert ; AE9 tracé.
+
+### U17. IA à espérance simulée
+
+- **Goal :** une vraie stratégie de jeu, calibrée sur l'échelle familiale (R23) — et une colonne Tam vécue au fil de la partie.
+- **Requirements :** R23 ; retours du 2026-07-18 (points 3, 4 et 7).
+- **Dependencies :** U1, U16.
+- **Files :** `src/engine/ai.js`, `tests/ai.test.js`.
+- **Approach :** à chaque décision (garde/relance, cible, annonce Tam, choix d'inscription ou de barrage), simuler quelques centaines de fins de tour avec le moteur (rapide : une partie complète < 1 s) et retenir la meilleure espérance ; la valeur d'une inscription intègre le levier du seuil (± 5 par point autour de 60) et le coût d'opportunité de la case ; les annonces Tam deviennent des actions évaluées comme les autres — osées quand l'espérance est positive, donc réparties sur toute la partie ; budget de calcul par décision ≈ 30 ms maximum (germe injectable pour les tests).
+- **Test scenarios :** calibrage : score moyen entre 1 050 et 1 350 sur 200 parties (germe fixé) ; la première inscription en colonne Tam intervient en moyenne avant le tour 40 (fin de la thésaurisation) ; toujours ≤ ~1,5 Yam inscrit par partie en moyenne ; 1 000 parties légales sans blocage ; une partie complète auto-jouée reste sous 3 secondes.
+- **Verification :** `node --test tests/ai.test.js` vert ; en jouant, ses coups racontent une stratégie.
+
+### U18. Finitions d'interface signalées en partie
+
+- **Goal :** deux frictions réelles de jeu corrigées.
+- **Requirements :** R18 (retour automatique à sa feuille au lancer), R19 (action unique quand la case vaut 0).
+- **Dependencies :** U8.
+- **Files :** `src/ui/app.js`, `src/ui/preview.js`.
+- **Approach :** tout lancer du joueur au trait resélectionne l'onglet de sa propre feuille ; dans l'aperçu, si les points affichés sont 0 (contrat manqué ou contrainte violée), ne montrer que « Annuler » et « Inscrire 0 » ; « Barrer · 0 » n'apparaît que quand l'inscription rapporterait des points.
+- **Test scenarios (smoke) :** lancer depuis l'onglet adverse → retour immédiat sur sa feuille ; aperçu d'une case à 0 → un seul bouton d'inscription ; aperçu d'une case à points → « Barrer · 0 » présent.
+- **Verification :** partie jouée à la main sans friction sur ces deux points.
+
 ### U11. Preuve d'équité des dés
 
 - **Goal :** transformer la confiance dans les dés en preuve automatique.
@@ -430,6 +461,8 @@ L'arborescence est une déclaration de forme, pas une camisole : l'implémenteur
 | IA — partie haute et cibles | jamais un chiffre 3-6 à moins de 3 dés si alternative ; gardes conformes à l'annonce Tam ; ≤ ~1,5 Yam inscrit par partie en moyenne (germe fixé) | U12, U13 | clôture de U13 |
 | Mode À plusieurs | partie générative 3 joueurs (195 tours) + migrations v1/v2 + smoke passage de téléphone | U14 | clôture de U14 |
 | Équité des combinaisons | 200 000 premiers lancers : Yam sec, carré et quinte servis à leur taux théorique ± 40 % relatif | U15 | clôture de U15 |
+| Trio transitif | AE9 tracé : + contre − vérifié directement, Moyen vide compris | U16 | clôture de U16 |
+| IA calibrée sur l'échelle familiale | score moyen 1 050-1 350 sur 200 parties (germe fixé) ; 1ʳᵉ inscription Tam avant le tour 40 en moyenne ; ≤ 1,5 Yam/partie ; partie auto-jouée < 3 s | U17 | clôture de U17 |
 
 ---
 
