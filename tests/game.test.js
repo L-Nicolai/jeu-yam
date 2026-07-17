@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   applyEntry,
   createGame,
+  GAME_MODES,
   getGameTotals,
   getGameOutcome,
   isGameOver,
@@ -17,6 +18,7 @@ import { deserializeGame, serializeGame } from '../src/engine/serialize.js';
 import {
   clearSavedGame,
   loadGame,
+  loadSavedGame,
   saveGame,
 } from '../src/storage.js';
 import { playAiTurn } from '../src/engine/ai.js';
@@ -98,6 +100,29 @@ test('parties génératives — 500 parties aléatoires terminent 130 tours sans
   for (let seed = 1; seed <= 500; seed += 1) playLegalRandomGame(seed);
 });
 
+test('mode Jouer seule — une partie générative complète termine 65 tours sans blocage', () => {
+  const random = mulberry32(20260717);
+  let state = createGame({ mode: GAME_MODES.SINGLE });
+  let turns = 0;
+  while (!isGameOver(state) && turns < 66) {
+    state = rollDice(state, random);
+    let actions = getLegalActions(state);
+    if (actions.mustAnnounceTam || (!actions.entries.length && actions.announcements.length)) {
+      state = announceTam(state, actions.announcements[0].category);
+      actions = getLegalActions(state);
+    }
+    assert.ok(actions.entries.length > 0, `aucun coup légal au tour ${turns}`);
+    const entry = actions.entries[Math.floor(random() * actions.entries.length)];
+    state = applyEntry(state, entry.column, entry.category);
+    turns += 1;
+  }
+  assert.equal(turns, 65);
+  assert.equal(state.completedTurns, 65);
+  assert.equal(isGameOver(state), true);
+  assert.equal(getGameOutcome(state).type, 'single');
+  assert.equal(getGameOutcome(state).winnerIndex, null);
+});
+
 function memoryStorage() {
   const values = new Map();
   return {
@@ -115,6 +140,38 @@ test('sauvegarde locale — aller-retour exact, y compris annonce Tam active', (
   state.turn.held = [true, true, true, false, false];
   saveGame(state, storage);
   assert.deepEqual(loadGame(storage), state);
+});
+
+test('sauvegarde v2 — le mode Jouer seule est conservé à la reprise', () => {
+  const storage = memoryStorage();
+  const state = createGame({ mode: GAME_MODES.SINGLE });
+  saveGame(state, storage);
+  assert.deepEqual(loadSavedGame(storage), state);
+  const payload = JSON.parse(storage.getItem('yam-leslie-partie'));
+  assert.equal(payload.version, 2);
+  assert.equal(payload.mode, GAME_MODES.SINGLE);
+});
+
+test('migration douce — un payload v1 reprend en mode contre l’ordinateur', () => {
+  const storage = memoryStorage();
+  const legacyState = createGame();
+  legacyState.mode = 'solo';
+  storage.setItem('yam-leslie-partie', JSON.stringify({ version: 1, state: legacyState }));
+  const restored = loadSavedGame(storage);
+  assert.equal(restored.mode, GAME_MODES.COMPUTER);
+  assert.equal(restored.players.length, 2);
+  assert.deepEqual(restored.players, legacyState.players);
+  saveGame(restored, storage);
+  const upgraded = JSON.parse(storage.getItem('yam-leslie-partie'));
+  assert.equal(upgraded.version, 2);
+  assert.equal(upgraded.mode, GAME_MODES.COMPUTER);
+});
+
+test('écran d’accueil — aucune sauvegarde valide ne représente une partie en cours', () => {
+  const storage = memoryStorage();
+  assert.equal(loadSavedGame(storage), null);
+  storage.setItem('yam-leslie-partie', '{pas du json');
+  assert.equal(loadSavedGame(storage), null);
 });
 
 test('sauvegarde locale — JSON corrompu ou version inconnue démarre une partie propre', () => {

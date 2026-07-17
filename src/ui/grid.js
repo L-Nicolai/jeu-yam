@@ -16,12 +16,16 @@ function completedCount(sheet) {
   );
 }
 
-export function renderGrid(container, state, { onCell = null } = {}) {
-  const playerIndex = state.activePlayerIndex;
+export function renderGrid(container, state, {
+  highlightedEntry = null,
+  onCell = null,
+  playerIndex = state.activePlayerIndex,
+  showActions = playerIndex === state.activePlayerIndex,
+} = {}) {
   const player = state.players[playerIndex];
   const sheet = player.sheet;
   const totals = getGameTotals(state).players[playerIndex];
-  const actions = getLegalActions(state);
+  const actions = showActions ? getLegalActions(state) : { entries: [], announcements: [] };
   const playable = new Set(actions.entries.map(({ column, category }) => `${column}:${category}`));
   const announceable = new Set(actions.announcements.map(({ column, category }) => `${column}:${category}`));
 
@@ -44,6 +48,12 @@ export function renderGrid(container, state, { onCell = null } = {}) {
       button.classList.toggle('playable', playable.has(key));
       button.classList.toggle('announceable', announceable.has(key));
       button.classList.toggle('filled', value !== null);
+      button.classList.toggle(
+        'recent-entry',
+        highlightedEntry?.playerId === player.id
+          && highlightedEntry.column === column.key
+          && highlightedEntry.category === category.key,
+      );
       button.setAttribute('aria-label', `${category.label}, colonne ${column.label}${value === null ? '' : ` : ${value} points`}`);
       if (onCell) button.addEventListener('click', () => onCell(column.key, category.key, {
         playable: playable.has(key),

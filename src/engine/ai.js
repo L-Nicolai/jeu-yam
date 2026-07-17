@@ -1,4 +1,4 @@
-import { CATEGORY_KEYS } from './constants.js';
+import { CATEGORY_KEYS, UPPER_KEYS } from './constants.js';
 import { applyEntry } from './game.js';
 import {
   announceTam,
@@ -30,8 +30,25 @@ function countsFor(dice) {
   return counts;
 }
 
-function entryValue(entry, rollCount) {
+function upperMarginalValue(sheetColumn, category, points) {
+  const face = UPPER_KEYS.indexOf(category) + 1;
+  const current = UPPER_KEYS.reduce((total, key) => total + (sheetColumn[key] ?? 0), 0);
+  const projected = current + points;
+  let value;
+  if (current >= 60) value = points * 5;
+  else if (projected < 60) value = points * 6;
+  else value = ((60 - current) * 6) + ((projected - 60) * 5) + 30;
+
+  const target = face * 3;
+  return value - (Math.max(0, target - points) * 4);
+}
+
+function entryValue(state, entry, rollCount) {
   let value = entry.points - CATEGORY_COST[entry.category];
+  if (UPPER_KEYS.includes(entry.category)) {
+    const sheetColumn = state.players[state.activePlayerIndex].sheet[entry.column];
+    value = upperMarginalValue(sheetColumn, entry.category, entry.points) - CATEGORY_COST[entry.category];
+  }
   if (!entry.validCombination) value -= 80;
   if (entry.column === 'dry' && rollCount === 1) {
     if (['straight', 'full', 'fourKind', 'yam'].includes(entry.category) && entry.validCombination) value += 120;
@@ -43,19 +60,19 @@ function entryValue(entry, rollCount) {
   return value;
 }
 
-function bestEntry(entries, rollCount) {
+function bestEntry(state, entries, rollCount) {
   return [...entries].sort((left, right) => {
-    const difference = entryValue(right, rollCount) - entryValue(left, rollCount);
+    const difference = entryValue(state, right, rollCount) - entryValue(state, left, rollCount);
     if (difference) return difference;
     return right.points - left.points;
   })[0] ?? null;
 }
 
-function strongDryEntry(entries) {
+function strongDryEntry(state, entries) {
   return entries
     .filter((entry) => entry.column === 'dry' && entry.validCombination)
     .filter((entry) => ['straight', 'full', 'fourKind', 'yam'].includes(entry.category) || entry.points >= 18)
-    .sort((left, right) => entryValue(right, 1) - entryValue(left, 1))[0] ?? null;
+    .sort((left, right) => entryValue(state, right, 1) - entryValue(state, left, 1))[0] ?? null;
 }
 
 function completedCombination(entry) {
@@ -70,7 +87,6 @@ function tamTarget(state, announcements) {
   if (counts[0] >= 4 && open.has('fourKind')) return 'fourKind';
   if (counts[0] === 3 && counts[1] === 2 && open.has('full')) return 'full';
   if (scoreCategory('straight', dice).valid && open.has('straight')) return 'straight';
-  if (counts[0] >= 3 && open.has('fourKind')) return 'fourKind';
   return null;
 }
 
@@ -114,7 +130,7 @@ export function chooseAiAction(state) {
     return { type: 'announce-tam', category: announcement.category };
   }
 
-  const dry = state.turn.rollCount === 1 ? strongDryEntry(legal.entries) : null;
+  const dry = state.turn.rollCount === 1 ? strongDryEntry(state, legal.entries) : null;
   if (dry) return { type: 'entry', column: dry.column, category: dry.category };
 
   if (state.turn.rollCount === 1 && !state.turn.tamAnnouncement && legal.announcements.length) {
@@ -122,8 +138,8 @@ export function chooseAiAction(state) {
     if (target) return { type: 'announce-tam', category: target };
   }
 
-  const best = bestEntry(legal.entries, state.turn.rollCount);
-  if (best && completedCombination(best) && best.points >= 40) {
+  const best = bestEntry(state, legal.entries, state.turn.rollCount);
+  if (best && completedCombination(best)) {
     return { type: 'entry', column: best.column, category: best.category };
   }
 
@@ -166,4 +182,3 @@ export function playAiTurn(initialState, random = Math.random) {
   }
   return state;
 }
-

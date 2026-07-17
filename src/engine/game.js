@@ -3,6 +3,11 @@ import { scoreColumn } from './scoring.js';
 import { createPlayer } from './players.js';
 import { previewEntry } from './rules.js';
 
+export const GAME_MODES = Object.freeze({
+  SINGLE: 'single',
+  COMPUTER: 'computer',
+});
+
 function clone(value) {
   return structuredClone(value);
 }
@@ -17,13 +22,27 @@ function freshTurn() {
   };
 }
 
-export function createGame(playerDefinitions = [
-  createPlayer({ id: 'local', name: 'Leslie', kind: 'human' }),
-  createPlayer({ id: 'computer', name: 'L’ordinateur', kind: 'computer' }),
-]) {
+function playersForMode(mode) {
+  const players = [createPlayer({ id: 'local', name: 'Leslie', kind: 'human' })];
+  if (mode === GAME_MODES.COMPUTER) {
+    players.push(createPlayer({ id: 'computer', name: 'L’ordinateur', kind: 'computer' }));
+  }
+  return players;
+}
+
+export function createGame(options = {}) {
+  const legacyPlayers = Array.isArray(options) ? options : null;
+  const mode = legacyPlayers
+    ? (legacyPlayers.length === 1 ? GAME_MODES.SINGLE : GAME_MODES.COMPUTER)
+    : (options.mode ?? GAME_MODES.COMPUTER);
+  if (!Object.values(GAME_MODES).includes(mode)) throw new RangeError(`Mode de jeu inconnu : ${mode}`);
+  const playerDefinitions = legacyPlayers ?? options.players ?? playersForMode(mode);
+  if (!Array.isArray(playerDefinitions) || playerDefinitions.length < 1) {
+    throw new TypeError('Une partie exige au moins un joueur.');
+  }
   return {
     schemaVersion: 1,
-    mode: 'solo',
+    mode,
     players: playerDefinitions.map((player) => ({ ...player, sheet: createEmptySheet() })),
     activePlayerIndex: 0,
     completedTurns: 0,
@@ -66,6 +85,9 @@ export function applyEntry(state, column, category, { strike = false } = {}) {
 export function getGameOutcome(state) {
   if (!isGameOver(state)) return null;
   const totals = getGameTotals(state).players;
+  if (totals.length === 1) {
+    return { type: 'single', winnerIndex: null, totals: [totals[0].grandTotal] };
+  }
   if (totals[0].grandTotal === totals[1].grandTotal) {
     return { type: 'tie', winnerIndex: null, totals: totals.map(({ grandTotal }) => grandTotal) };
   }

@@ -53,13 +53,18 @@ export function showEndgame(root, state, { onReplay }) {
   screen.setAttribute('role', 'dialog');
   screen.setAttribute('aria-label', 'Fin de la partie');
   const heading = document.createElement('h2');
-  heading.textContent = outcome.type === 'tie'
-    ? 'Égalité parfaite'
-    : `${state.players[outcome.winnerIndex].name} gagne !`;
+  heading.textContent = outcome.type === 'single'
+    ? 'Partie terminée'
+    : (outcome.type === 'tie'
+      ? 'Égalité parfaite'
+      : `${state.players[outcome.winnerIndex].name} gagne !`);
   const summary = document.createElement('p');
-  summary.textContent = `${state.players[0].name} ${totals[0].grandTotal} — ${totals[1].grandTotal} ${state.players[1].name}`;
+  summary.textContent = outcome.type === 'single'
+    ? `TOTAL général : ${totals[0].grandTotal} points`
+    : `${state.players[0].name} ${totals[0].grandTotal} — ${totals[1].grandTotal} ${state.players[1].name}`;
   const sheets = document.createElement('div');
   sheets.className = 'final-sheets';
+  sheets.classList.toggle('single-player', outcome.type === 'single');
   state.players.forEach((player, index) => sheets.append(createPlayerSheet(player, totals[index])));
   const replay = document.createElement('button');
   replay.type = 'button';
