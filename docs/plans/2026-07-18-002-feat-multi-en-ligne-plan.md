@@ -131,7 +131,7 @@ Hors périmètre de cette version : ordinateur dans les parties en ligne ; chat 
 ### Key Technical Decisions
 
 - KTD1. **Firebase Realtime Database, plan gratuit Spark** (session-settled: user-approved — le principe du service unique a été validé en dialogue, le choix précis délégué à une recherche 2026 ; chosen over Supabase Realtime — projets gratuits mis en pause après 7 jours d'inactivité, rédhibitoire pour un jeu occasionnel —, Cloud Firestore — pas de présence native —, Ably — clé publique = tous droits sans serveur de jetons —, PartyKit/Deno/Convex — exigent du code serveur déployé). Atouts décisifs : SDK ES modules servi par le CDN officiel sans compilation, présence native (`onDisconnect`) pour « On attend X », règles de sécurité par chemin conçues pour des clés embarquées publiquement, gratuit sans carte bancaire, limites (100 connexions simultanées, 1 Go, 10 Go/mois) ≈ 20 fois l'usage familial.
-- KTD2. **La partie vit sur le service** : `games/{gameId}` porte l'état de partie sérialisé complet (réutilisation de `src/engine/serialize.js`), la dernière action, les places et leur présence. L'appareil du joueur au trait applique l'action au moteur local puis publie l'état ; les autres appareils rendent l'état reçu. Un seul appareil écrit à la fois (verrou de tour par place).
+- KTD2. **La partie vit sur le service** : `games/{gameId}` porte l'état de partie sérialisé complet (réutilisation de `src/engine/serialize.js`), la dernière action, les places et leur présence. L'appareil du joueur au trait applique l'action au moteur local puis publie l'état ; les autres appareils rendent l'état reçu. Le verrou de tour est appliqué par le service : chaque état publié embarque le jeton de la place au trait et un compteur de version strictement croissant ; les règles rejettent toute écriture dont le jeton ne correspond pas à la place au trait ou dont la version n'excède pas celle stockée — neutralisant du même coup les écritures résiduelles d'un appareil endormi qui se reconnecte et celles d'une manche antérieure après « Rejouer » (R14). La simulation mémoire applique la même règle, pour que les tests la prouvent.
 - KTD3. **Couche réseau isolée** : `src/net/` expose une petite interface (créer, rejoindre, réclamer une place, publier, s'abonner, présence) avec deux implémentations — Firebase (réelle) et une simulation en mémoire pour les tests. Le SDK Firebase est chargé par import dynamique uniquement à l'entrée du mode À distance : les modes locaux restent zéro dépendance, hors ligne, inchangés.
 - KTD4. **Identité de place par jeton local** : chaque place réclamée dépose un jeton aléatoire dans le stockage local, par partie et par place. Reprise automatique quand l'appareil possède exactement un jeton de la partie ; s'il en possède plusieurs (appareil partagé, tests multi-onglets) ou aucun, la porte adaptative affiche la liste des places (R2).
 - KTD5. **Lien fragment** : `https://l-nicolai.github.io/jeu-yam/#p/{gameId}` — compatible hébergement statique, aucun routage serveur ; `gameId` = identifiant aléatoire non devinable (~20 caractères). Règles Firebase : lecture refusée à la racine (aucune énumération possible), lecture/écriture uniquement sous `games/{gameId}`, validation de la forme du document.
@@ -198,18 +198,18 @@ jeu-yam/
 - **Requirements :** Dependencies (enveloppe des modes) ; R6, R7.
 - **Dependencies :** aucune.
 - **Files :** `src/engine/game.js`, `src/engine/players.js`, `tests/game.test.js`.
-- **Approach :** nouvelle valeur de mode « à distance » ; joueurs `kind: 'remote'` activés (déjà prévus par l'interface des joueurs) ; classement de fin généralisé à N joueurs pour ce mode (réutilise le chemin du mode local) ; pas d'écran de passage de téléphone en ligne ; `rules.js`, `scoring.js`, `serialize.js` strictement intouchés.
+- **Approach :** nouvelle valeur de mode « à distance » ; dans l'état partagé, tous les joueurs portent uniformément `kind: 'remote'` — le droit d'agir se décide par « c'est ma place » (fournie par la couche réseau), jamais par le type de joueur, ce qui impose de remplacer les gardes `kind === 'human'` de l'interface aux quatre endroits concernés (lancer, cases, dés, sélecteur Tam obligatoire) ; classement de fin généralisé à N joueurs pour ce mode (réutilise le chemin du mode local) ; pas d'écran de passage de téléphone en ligne ; homogénéiser `lastAction` (l'action « garder » porte le `playerId` comme les autres) ; `rules.js`, `scoring.js`, `serialize.js` strictement intouchés — hors ce champ `lastAction`. **Prérequis d'ouverture :** stabiliser le test instable de `tests/ai.test.js` (« un simple brelan ne déclenche jamais une annonce Carré » — assertion sur un tirage réellement aléatoire) en fixant sa source aléatoire : la porte « suite verte » doit être un signal fiable avant tout chantier.
 - **Test scenarios :** partie générative à 3 joueurs en mode à distance (moteur seul) sans blocage ; classement avec égalité ; sérialisation aller-retour d'une partie en ligne mi-tour ; les 54 tests v1 restent verts.
 - **Verification :** `node --test tests/` entièrement vert.
 
 ### U2. Couche réseau : interface et simulation mémoire
 
 - **Goal :** tout le protocole du multi, prouvé par tests sans le service.
-- **Requirements :** R2, R3, R4, R8, R9, R14 (côté protocole) ; KTD3, KTD4.
+- **Requirements :** R2, R3, R4, R8, R9, R10, R14 (côté protocole) ; KTD3, KTD4, KTD7.
 - **Dependencies :** U1.
-- **Files :** `src/net/fake.js`, `tests/online.test.js`.
-- **Approach :** interface minimale — créer une partie, rejoindre (unicité du prénom), réclamer une place (jeton), publier l'état, s'abonner, signaler la présence, relancer une manche ; la simulation mémoire implémente tout avec des abonnés en mémoire, utilisable par deux « clients » dans le même test.
-- **Test scenarios :** deux clients simulés jouent une partie complète de bout en bout ; unicité des prénoms (AE6) ; claim d'une place déconnectée et reprise mi-tour (AE3, côté protocole) ; « Rejouer avec ce groupe » réutilise les places (AE7) ; le verrou de tour refuse une publication hors de son tour ; l'indépendance vis-à-vis de la sauvegarde locale (AE4, côté stockage).
+- **Files :** `src/net/fake.js`, `src/storage.js` (jetons de place sous clé distincte), `tests/online.test.js`.
+- **Approach :** interface minimale — créer une partie, rejoindre (unicité du prénom), réclamer une place (jeton), lancer la partie (réservée à la place créatrice, marquée dans le document ; passe la partie en phase « en jeu », fermant les entrées), publier l'état, s'abonner, signaler la présence, relancer une manche ; « rejoindre » et « réclamer » sont atomiques — échec propre si le prénom ou la place vient d'être pris, et la reprise automatique par jeton passe par la même réclamation validée ; la simulation mémoire implémente tout, y compris le verrou de version (KTD2), utilisable par deux « clients » dans le même test.
+- **Test scenarios :** deux clients simulés jouent une partie complète de bout en bout ; unicité des prénoms (AE6) ; claim d'une place déconnectée et reprise mi-tour (AE3, côté protocole) ; « Rejouer avec ce groupe » réutilise les places (AE7) ; le verrou de tour refuse une publication hors de son tour, périmée (version) ou d'une manche antérieure ; course simulée : deux réclamations concurrentes de la même place → un seul gagnant, l'autre échoue proprement ; l'indépendance vis-à-vis de la sauvegarde locale (AE4, côté stockage).
 - **Verification :** `node --test tests/online.test.js` vert.
 
 ### U3. Intégration Firebase
@@ -218,7 +218,7 @@ jeu-yam/
 - **Requirements :** R11, R12 ; KTD1, KTD5, KTD8.
 - **Dependencies :** U2.
 - **Files :** `src/net/firebase.js`, `src/net/config.js`, `docs/reference/firebase-rules.json`, `README.md` (section compte).
-- **Approach :** SDK Firebase par import dynamique du CDN officiel, uniquement à l'entrée du mode À distance ; mêmes signatures que la simulation ; présence par `onDisconnect` ; `config.js` livré avec un espace réservé clairement marqué ; `firebase-rules.json` : racine illisible, lecture/écriture sous `games/{gameId}` seulement, validation de forme ; README : la procédure de création du compte en français simple (3 étapes de la console, mode verrouillé, collage des règles, récupération de la configuration).
+- **Approach :** SDK Firebase par import dynamique du CDN officiel, uniquement à l'entrée du mode À distance ; mêmes signatures que la simulation, réclamations par transaction ; présence par `onDisconnect` ; création et publication adossées à l'indicateur de connexion du service avec un délai explicite — au-delà de quelques secondes, échec franc « Connexion impossible — réessayer » (le SDK, lui, ne rejette jamais hors-ligne : il met en file) ; `config.js` livré avec un espace réservé clairement marqué ; `firebase-rules.json` : racine illisible, lecture/écriture sous `games/{gameId}` seulement, validation de forme ; README : la procédure de création du compte en français simple (3 étapes de la console, mode verrouillé, collage des règles, récupération de la configuration).
 - **Execution note :** sans compte réel, cette unité se prouve par revue et par la conformité de signatures avec la simulation ; la preuve vivante arrive en U7. Test expectation: none — l'implémentation réelle est couverte par le smoke U7 ; sa jumelle simulée porte les tests.
 - **Verification :** aucune requête réseau émise tant qu'on n'entre pas en mode À distance (vérifiable au moniteur réseau).
 
@@ -228,7 +228,7 @@ jeu-yam/
 - **Requirements :** R1, R2, R3 ; AE1, AE6.
 - **Dependencies :** U1, U2.
 - **Files :** `src/ui/online.js`, `src/ui/app.js`, `index.html`, `styles.css`.
-- **Approach :** 4ᵉ carte sur l'écran d'accueil ; création → lien `#p/{gameId}` affiché avec partage natif (`navigator.share`) et copie ; la même page de partie s'adapte (champ prénom / liste des places / « Partie en cours — complète ») ; salle d'attente identique pour tous (prénoms en direct + « En attente du lancement par {créatrice}… ») ; bouton « Commencer » réservé à la créatrice, actif à partir de 2 joueurs ; unicité des prénoms refusée à la saisie avec message doux.
+- **Approach :** 4ᵉ carte sur l'écran d'accueil ; création → lien `#p/{gameId}` affiché avec partage natif (`navigator.share`) et copie ; la même page de partie s'adapte (champ prénom / liste des places / « Partie en cours — complète ») ; salle d'attente identique pour tous (prénoms en direct + « En attente du lancement par {créatrice}… ») ; bouton « Commencer » réservé à la créatrice, actif à partir de 2 joueurs ; unicité des prénoms refusée à la saisie avec message doux ; au démarrage, le lien `#p/{gameId}` est intercepté avant tout rendu de la sauvegarde locale — un invité ayant une partie solo en cours atterrit bien dans la salle d'attente, pas dans sa partie locale.
 - **Test scenarios (via la simulation) :** porte adaptative dans ses trois états ; refus de prénom en double ; seuil de lancement à 2. Smoke : parcours complet à deux onglets sur la simulation.
 - **Verification :** parcours créer-partager-rejoindre-lancer joué à la main (simulation).
 
@@ -238,8 +238,8 @@ jeu-yam/
 - **Requirements :** R4, R5, R6, R8 (bandeau) ; AE2, AE5.
 - **Dependencies :** U4.
 - **Files :** `src/ui/app.js`, `src/ui/grid.js`, `src/ui/online.js`, `styles.css`.
-- **Approach :** au trait : les gestes v1 inchangés, chaque action publiée ; chez les autres : le pipeline du « tour de l'ordinateur » (bascule de feuille, dés, gardes, inscription surlignée) généralisé aux joueurs distants, cadencé par les actions reçues — au rythme réel du joueur, sans pauses artificielles ; onglets consultables pendant l'attente ; « On attend {prénom}… » sur perte de présence.
-- **Test scenarios (simulation) :** AE2 rejoué par deux clients simulés ; annonces Tam propagées (AE5) ; le spectateur ne peut ni lancer ni inscrire (verrou visuel et protocole).
+- **Approach :** au trait : les gestes v1 inchangés, chaque action publiée ; chez les autres : le pipeline du « tour de l'ordinateur » (bascule de feuille, dés, gardes, inscription surlignée) généralisé aux joueurs distants, cadencé par les actions reçues — au rythme réel du joueur, sans pauses artificielles ; onglets consultables pendant l'attente ; « On attend {prénom}… » sur perte de présence ; au trait, une publication non confirmée bloque l'action suivante derrière le bandeau « connexion… » — la divergence entre l'écran local et le service reste bornée à une action ; le chemin distant publie explicitement au lieu d'appeler la sauvegarde locale (jamais de refus silencieux en guise d'étanchéité).
+- **Test scenarios (simulation) :** AE2 rejoué par deux clients simulés ; annonces Tam propagées (AE5) ; le joueur hors tour ne peut ni lancer ni inscrire (verrou visuel et protocole).
 - **Verification :** partie à deux onglets fluide sur simulation ; aucune action possible hors de son tour.
 
 ### U6. Reprises, fin de partie, rejouer, échecs
@@ -248,14 +248,14 @@ jeu-yam/
 - **Requirements :** R7, R9, R13, R14 ; AE3, AE7.
 - **Dependencies :** U5.
 - **Files :** `src/ui/online.js`, `src/ui/endgame.js`, `src/net/fake.js` (si besoin), `tests/online.test.js` (extension).
-- **Approach :** reprise automatique (jeton unique) ou par liste des places ; reprise en salle d'attente y compris rôle de créatrice ; écran de fin : classement complet, « Rejouer avec ce groupe » (nouvelle manche, mêmes places, feuilles vierges poussées à tous) ; échecs nommés : « Connexion impossible — réessayer », « Cette partie n'existe plus » avec retour à l'accueil.
+- **Approach :** reprise automatique (jeton unique) ou par liste des places ; reprise en salle d'attente y compris rôle de créatrice ; écran de fin : classement complet, « Rejouer avec ce groupe » (nouvelle manche, mêmes places, feuilles vierges poussées à tous) ; échecs nommés et distingués : lecture aboutie renvoyant « rien » → « Cette partie n'existe plus » avec retour à l'accueil ; lecture en échec, délai dépassé ou SDK inchargeable → « Connexion impossible — réessayer ».
 - **Test scenarios :** AE3 complet (déconnexion au trait, reprise mi-tour depuis un « autre appareil » simulé) ; AE7 ; lien mort → message et retour ; création sans réseau simulé → message et réessai.
 - **Verification :** les scénarios dirigés passent sur simulation ; `node --test tests/` entièrement vert.
 
 ### U7. Preuve sur le vrai service et publication
 
 - **Goal :** la démonstration vivante — une vraie partie Firebase multi-clients, puis mise en ligne.
-- **Requirements :** R4, R11, R12 ; Definition of Done.
+- **Requirements :** R4, R10, R11, R12 ; Definition of Done.
 - **Dependencies :** U3, U6 ; création du compte Firebase par Leslie (guidée).
 - **Files :** `src/net/config.js` (clés réelles), déploiement.
 - **Approach :** Leslie crée le compte (procédure du README : console Firebase, connexion Google, Realtime Database en mode verrouillé, collage de `docs/reference/firebase-rules.json`, récupération de la configuration) ; les clés sont mises dans `config.js` ; vérification Claude : partie complète à trois onglets de navigateur sur le vrai service (AE1-AE7 rejoués), coupure d'un onglet et reprise réelle, contrôle que la racine de la base est illisible ; puis commit et publication GitHub Pages.
@@ -287,6 +287,14 @@ jeu-yam/
 - Les règles Firebase publiées interdisent l'énumération des parties ; seules les clés publiques par conception sont embarquées.
 - Le README explique la création du compte et le mode À distance en français simple.
 - Aucun code mort ni essai abandonné dans le dépôt.
+
+---
+
+## Risks & Dependencies
+
+- Premier chargement du SDK (~200 Ko) chez un invité sur mauvaise connexion : la première impression du jeu — afficher « connexion… » immédiatement, jamais d'écran blanc (R13).
+- Un téléphone passé en arrière-plan (iOS notamment) déclenche des « On attend {prénom}… » transitoires alors que la personne est là — bruit de présence à lisser (petit délai avant d'afficher l'attente).
+- Après une longue coupure, un client reçoit le dernier état sans rejouer les actions manquées : la feuille « saute » — assumé, le rendu par état l'absorbe sans corruption.
 
 ---
 
