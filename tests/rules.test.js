@@ -113,3 +113,21 @@ test('AE8 — seules cases Tam : annonce proposée d’office après le premier 
   assert.equal(actions.entries.length, 0);
 });
 
+test('AE9 — + doit dépasser − directement, même quand Moyen est vide', () => {
+  const state = afterFirstRoll([1, 2, 3, 4, 1]);
+  state.players[0].sheet.free.minus = 20;
+  const preview = previewEntry(state, 'free', 'plus');
+  assert.equal(preview.points, 0);
+  assert.equal(preview.validCombination, false);
+  assert.match(preview.reason, /\+ doit être strictement supérieur à −/);
+});
+
+test('AE9 — inscrire − au-dessus du + déjà posé vaut zéro aussi', () => {
+  const state = afterFirstRoll([6, 6, 5, 6, 5]);
+  state.players[0].sheet.free.plus = 15;
+  const preview = previewEntry(state, 'free', 'minus');
+  assert.equal(preview.points, 0);
+  assert.equal(preview.validCombination, false);
+  assert.match(preview.reason, /\+ doit être strictement supérieur à −/);
+});
+

@@ -38,11 +38,9 @@ export function showEntryPreview(root, preview, { onConfirm, onStrike, onCancel 
   reason.textContent = preview.reason;
   const actions = document.createElement('div');
   actions.className = 'preview-actions';
-  actions.append(
-    button('Annuler', 'secondary-button', onCancel),
-    button('Barrer · 0', 'danger-button', onStrike),
-    button(preview.points === 0 ? 'Inscrire 0' : 'Inscrire', 'confirm-button', onConfirm),
-  );
+  actions.append(button('Annuler', 'secondary-button', onCancel));
+  if (preview.points > 0) actions.append(button('Barrer · 0', 'danger-button', onStrike));
+  actions.append(button(preview.points === 0 ? 'Inscrire 0' : 'Inscrire', 'confirm-button', onConfirm));
   card.append(score, reason, actions);
 }
 

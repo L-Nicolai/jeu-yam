@@ -160,6 +160,7 @@ function lastEntryIsYam() {
 
 function handleRoll() {
   closePreview(elements.overlay);
+  viewedPlayerIndex = state.activePlayerIndex;
   updateState(rollDice(state));
   render();
   animateDice(elements.dice);
@@ -245,6 +246,7 @@ async function runComputerTurn() {
   while (state.status === 'playing' && state.activePlayerIndex === computerIndex) {
     const action = chooseAiAction(state);
     if (action.type === 'roll') {
+      viewedPlayerIndex = state.activePlayerIndex;
       updateState(applyAiAction(state, action));
       computerMessage = `L’ordinateur lance les dés · lancer ${state.turn.rollCount}/3`;
       render();
@@ -258,6 +260,7 @@ async function runComputerTurn() {
       computerMessage = `L’ordinateur garde ${kept} dé${kept > 1 ? 's' : ''}.`;
       render();
       await pause(1000);
+      viewedPlayerIndex = state.activePlayerIndex;
       updateState(rollDice(state));
       computerMessage = `L’ordinateur relance · lancer ${state.turn.rollCount}/3`;
       render();

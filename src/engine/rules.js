@@ -47,6 +47,7 @@ function trioConstraint(sheetColumn, category, points) {
   const minus = category === 'minus' ? points : sheetColumn.minus;
   if (plus !== null && middle !== null && plus <= middle) return '+ doit être strictement supérieur à Moyen';
   if (middle !== null && minus !== null && middle <= minus) return 'Moyen doit être strictement supérieur à −';
+  if (plus !== null && minus !== null && plus <= minus) return '+ doit être strictement supérieur à −';
   return null;
 }
 
