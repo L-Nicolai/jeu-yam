@@ -39,7 +39,7 @@ Les modes locaux existants restent intacts et 100 % locaux, pour Leslie comme po
 ### Actors
 
 - A1. Leslie — créatrice de la partie et joueuse ; propriétaire du compte de service.
-- A2. Les invités — 2 à 4 autres personnes ; rejoignent par le lien, jouent sous leur prénom, ne créent jamais de compte.
+- A2. Les invités — 1 à 4 autres personnes ; rejoignent par le lien, jouent sous leur prénom, ne créent jamais de compte.
 - A3. Le service temps réel — système externe gratuit qui héberge l'état des parties en direct ; invisible pour les joueurs.
 
 ### Requirements
@@ -47,8 +47,8 @@ Les modes locaux existants restent intacts et 100 % locaux, pour Leslie comme po
 **Créer et rejoindre**
 
 - R1. L'écran d'accueil propose le mode « À distance » ; créer une partie produit immédiatement un lien partageable (partage natif du téléphone + copie manuelle).
-- R2. Ouvrir le lien mène à la partie : saisie du prénom, puis entrée — aucun compte, aucune installation, jamais.
-- R3. 2 à 5 joueurs ; la créatrice voit les prénoms entrer dans la salle d'attente et lance la partie quand tout le monde est là ; une fois lancée, la partie n'accepte plus de nouveau joueur.
+- R2. Ouvrir le lien mène à la partie : saisie du prénom, puis entrée — aucun compte, aucune installation, jamais. Un prénom déjà présent dans la partie est refusé à l'entrée, avec invitation à se distinguer (initiale, surnom) : chaque prénom désigne toujours une personne unique. Le lien ouvre toujours la même page, qui s'adapte : avant le lancement, le champ « ton prénom » ; après, la liste des places — les places déconnectées se reprennent d'un toucher, les actives sont grisées, et un visiteur sans place lit « Partie en cours — complète ».
+- R3. 2 à 5 joueurs ; la salle d'attente est la même pour tous — chacun voit la liste des prénoms entrés se compléter en direct, avec la mention « En attente du lancement par {créatrice}… » ; le bouton de lancement, réservé à la créatrice, ne s'active qu'à partir de deux joueurs présents (créatrice comprise) ; une fois lancée, la partie n'accepte plus de nouveau joueur.
 - R4. Chaque action de jeu (lancer, garde, annonce, inscription, barrage) apparaît chez tous les joueurs en quasi temps réel.
 
 **Jouer ensemble**
@@ -59,15 +59,19 @@ Les modes locaux existants restent intacts et 100 % locaux, pour Leslie comme po
 
 **Absences et reprises**
 
-- R8. En cas de déconnexion d'un joueur (téléphone fermé, réseau perdu), la partie attend : les autres voient « On attend {prénom}… » sans limite de temps ; sa place lui reste réservée.
-- R9. Reprendre sa place : rouvrir le lien — depuis n'importe quel appareil — et toucher son prénom ; l'appareil d'origine, lui, reprend automatiquement sans étape.
+- R8. En cas de déconnexion d'un joueur (téléphone fermé, réseau perdu), la partie attend : les autres voient « On attend {prénom}… » sans limite de temps ; sa place lui reste réservée ; pendant l'attente, les onglets restent pleinement consultables — le bandeau n'immobilise pas l'écran.
+- R9. Reprendre sa place : rouvrir le lien — depuis n'importe quel appareil — et toucher son prénom ; l'appareil d'origine, lui, reprend automatiquement sans étape. La reprise vaut aussi en salle d'attente : quiconque était entré retrouve sa place en rouvrant le lien — créatrice comprise, avec son rôle et le bouton de lancement.
 - R10. Les parties en ligne vivent indépendamment des parties locales : démarrer ou effacer une partie locale sur un appareil n'affecte jamais une partie en ligne en cours, et réciproquement.
 
 **Le service et la propriété**
 
 - R11. Un unique compte de service gratuit, créé une seule fois par Leslie (accompagnée pas à pas) ; il n'apparaît jamais aux joueurs ; aucune donnée personnelle au-delà des prénoms choisis et de l'état des parties.
 - R12. Les modes locaux restent utilisables par quiconque possède l'adresse du jeu, sans jamais solliciter le service ; l'usage familial du mode à distance tient dans l'offre gratuite du service.
-- R13. La fluidité prime : toute attente liée au réseau est nommée à l'écran (« connexion… », « on attend… ») — l'interface ne fige jamais sans explication.
+- R13. La fluidité prime : toute attente liée au réseau est nommée à l'écran (« connexion… », « on attend… ») — l'interface ne fige jamais sans explication. Les échecs francs ont un message et une issue : « Connexion impossible — réessayer » à la création de partie ; « Cette partie n'existe plus », avec retour à l'accueil, pour un lien mort.
+
+**Enchaîner les manches**
+
+- R14. Depuis l'écran de fin, la créatrice peut « Rejouer avec ce groupe » : une nouvelle manche démarre immédiatement avec les mêmes joueurs, sans nouveau lien à partager ; les feuilles vierges apparaissent d'elles-mêmes chez tous.
 
 ### Key Flows
 
@@ -91,6 +95,8 @@ Les modes locaux existants restent intacts et 100 % locaux, pour Leslie comme po
 - AE3. **Covers R8, R9.** Given Léa au trait qui ferme son téléphone, Then les autres voient « On attend Léa… » sans limite ; When elle rouvre le lien sur un autre appareil et touche « Léa », Then elle reprend mi-tour — dés, relances restantes et annonce Tam compris.
 - AE4. **Covers R10.** Given une partie en ligne en cours, When la créatrice démarre une partie solo locale sur son téléphone, Then la partie en ligne reste intacte et rejoignable.
 - AE5. **Covers R6.** Given une annonce « Tam : Full » d'un joueur distant, Then la bannière d'annonce s'affiche chez tous les joueurs.
+- AE6. **Covers R2.** Given une partie où « Léa » est déjà entrée, When une seconde invitée tape « Léa », Then l'entrée est refusée avec l'invitation à se distinguer — jamais deux prénoms identiques dans une partie.
+- AE7. **Covers R14.** Given une partie terminée, When la créatrice touche « Rejouer avec ce groupe », Then une manche vierge démarre chez tous les joueurs sans nouveau lien.
 
 ### Success Criteria
 
@@ -104,11 +110,12 @@ Hors périmètre de cette version : ordinateur dans les parties en ligne ; chat 
 
 ### Dependencies / Assumptions
 
-- Le moteur de jeu existant est réutilisé tel quel (séparation moteur/interface et joueurs interchangeables du contrat v1) ; toute divergence de règle entre modes est un défaut.
+- Les règles du moteur existant (barèmes, garde-fous, ordre des colonnes) sont réutilisées sans aucune modification ; l'ajout du mode à distance étend uniquement l'enveloppe des modes — nouvelle valeur de mode, classement de fin généralisé au-delà du mode local, activation des joueurs distants déjà prévus par l'interface des joueurs. Toute divergence de règle entre modes reste un défaut.
 - Le mode à distance requiert le réseau ; les modes locaux continuent de fonctionner sans.
 - Le choix du service temps réel appartient au plan technique, sous contraintes : gratuit pour l'usage familial, sans serveur à entretenir, compatible avec un site statique, clés embarquables publiquement sans danger.
 
 ### Outstanding Questions
 
 - **Deferred to Planning :** choix précis du service temps réel et du protocole de synchronisation ; mécanique de reconnaissance de l'appareil d'origine (R9) ; comportement pendant les micro-coupures réseau (R13) ; procédure guidée de création du compte (R11).
+- **Reporté (revue du contrat) :** faut-il permettre à la créatrice de retirer un prénom de la salle d'attente avant le lancement (faute de frappe → place fantôme attendue indéfiniment) ? À trancher avant l'exécution.
 - **Resolve Before Planning :** aucun.
