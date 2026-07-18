@@ -24,6 +24,7 @@ import {
   showTamPicker,
 } from './preview.js';
 import { celebrateYam, showEndgame } from './endgame.js';
+import { createOnlineController, isMyRemoteTurn, parseOnlineGameId } from './online.js';
 
 const elements = {
   grid: document.querySelector('#score-grid'),
@@ -41,14 +42,17 @@ const elements = {
   startSingle: document.querySelector('#start-single'),
   startComputer: document.querySelector('#start-computer'),
   startLocal: document.querySelector('#start-local'),
+  startOnline: document.querySelector('#start-online'),
   modeActions: document.querySelector('.mode-actions'),
   localSetup: document.querySelector('#local-setup'),
   localPlayerCount: document.querySelector('#local-player-count'),
   localPlayerNames: document.querySelector('#local-player-names'),
   cancelLocal: document.querySelector('#cancel-local'),
+  onlineRoot: document.querySelector('#online-root'),
 };
 
-let state = loadSavedGame();
+const initialOnlineGameId = parseOnlineGameId(globalThis.location.hash);
+let state = initialOnlineGameId ? null : loadSavedGame();
 let inputLocked = false;
 let announcementText = '';
 let computerMessage = '';
@@ -56,13 +60,44 @@ let highlightedEntry = null;
 let viewedPlayerIndex = state?.activePlayerIndex ?? 0;
 let pendingStep = null;
 let skipNextClick = false;
+let onlineController = null;
+let onlineCredentials = null;
+let onlineDocument = null;
+let networkMessage = '';
+let waitingName = '';
+let displayedRemoteTurn = null;
+
+function isRemoteGame() {
+  return state?.mode === GAME_MODES.REMOTE;
+}
+
+function canCurrentPlayerAct() {
+  if (!state || inputLocked) return false;
+  const player = state.players[state.activePlayerIndex];
+  if (state.mode === GAME_MODES.REMOTE) return isMyRemoteTurn(onlineDocument, onlineCredentials);
+  return player.kind === 'human';
+}
 
 function updateState(nextState) {
   state = nextState;
+  if (isRemoteGame()) {
+    inputLocked = true;
+    networkMessage = 'connexion…';
+    render();
+    onlineController.publish(nextState).catch(() => {
+      state = onlineDocument?.state ?? state;
+      inputLocked = false;
+      networkMessage = 'Connexion impossible — réessayer';
+      render();
+    });
+    return;
+  }
   saveGame(state);
 }
 
 function messageFor(actions) {
+  if (networkMessage) return networkMessage;
+  if (waitingName) return `On attend ${waitingName}…`;
   if (computerMessage) return computerMessage;
   if (state.handoffRequired) return actions.rerollReason;
   if (state.turn.rollCount === 0) return 'Lancez les cinq dés pour commencer.';
@@ -118,23 +153,27 @@ function render() {
   elements.announcement.textContent = announcementText;
   elements.roll.textContent = state.turn.rollCount === 0 ? 'Lancer les dés' : `Relancer · ${3 - state.turn.rollCount}`;
   elements.roll.disabled = state.turn.rollCount === 0 ? !actions.canRoll : !actions.canReroll;
-  elements.roll.disabled ||= inputLocked || player.kind !== 'human';
+  elements.roll.disabled ||= !canCurrentPlayerAct();
   const handoffRequired = state.mode === GAME_MODES.LOCAL && state.handoffRequired;
   renderGrid(elements.grid, state, {
     highlightedEntry,
-    onCell: player.kind === 'human' && !inputLocked && !handoffRequired && viewedPlayerIndex === state.activePlayerIndex
+    onCell: canCurrentPlayerAct() && !handoffRequired && viewedPlayerIndex === state.activePlayerIndex
       ? handleCell
       : null,
     playerIndex: viewedPlayerIndex,
     showActions: viewedPlayerIndex === state.activePlayerIndex,
   });
-  renderDice(elements.dice, state.turn, {
-    onToggle: player.kind === 'human' && !inputLocked && !handoffRequired ? handleToggle : null,
+  renderDice(elements.dice, displayedRemoteTurn ?? state.turn, {
+    onToggle: canCurrentPlayerAct() && !handoffRequired ? handleToggle : null,
   });
   elements.app.classList.toggle('computer-thinking', player.kind === 'computer');
 
   if (state.status === 'finished') {
-    showEndgame(elements.overlay, state, { onReplay: replay });
+    const creatorCanReplay = isRemoteGame() && onlineCredentials?.playerId === onlineDocument?.creatorPlayerId;
+    showEndgame(elements.overlay, state, {
+      onReplay: isRemoteGame() ? (creatorCanReplay ? replayOnline : null) : replay,
+      replayLabel: isRemoteGame() ? 'Rejouer avec ce groupe' : 'Rejouer',
+    });
     return;
   }
 
@@ -145,7 +184,7 @@ function render() {
     return;
   }
 
-  if (actions.mustAnnounceTam && player.kind === 'human' && !elements.overlay.childElementCount) {
+  if (actions.mustAnnounceTam && canCurrentPlayerAct() && !elements.overlay.childElementCount) {
     showTamPicker(elements.overlay, actions.announcements, { onSelect: openTamConfirmation });
   }
 }
@@ -302,6 +341,10 @@ elements.sheetTabs.addEventListener('click', (event) => {
 });
 elements.newGame.addEventListener('click', () => {
   if (window.confirm('Commencer une nouvelle partie ? La partie actuelle sera effacée.')) {
+    if (isRemoteGame()) {
+      onlineController?.exit();
+      return;
+    }
     clearSavedGame();
     state = null;
     announcementText = '';
@@ -322,6 +365,18 @@ function replay() {
   render();
 }
 
+function replayOnline() {
+  inputLocked = true;
+  networkMessage = 'connexion…';
+  closePreview(elements.overlay);
+  render();
+  onlineController.replay().catch(() => {
+    inputLocked = false;
+    networkMessage = 'Connexion impossible — réessayer';
+    render();
+  });
+}
+
 function startGame(mode) {
   updateState(createGame({ mode }));
   announcementText = '';
@@ -336,6 +391,98 @@ function startGame(mode) {
 
 elements.startSingle.addEventListener('click', () => startGame(GAME_MODES.SINGLE));
 elements.startComputer.addEventListener('click', () => startGame(GAME_MODES.COMPUTER));
+
+let fakeOnlineService = null;
+
+async function loadOnlineService() {
+  const parameters = new URLSearchParams(globalThis.location.search);
+  if (parameters.get('simulation') === '1') {
+    const { createFakeOnlineService } = await import('../net/fake.js');
+    fakeOnlineService ??= createFakeOnlineService({ storage: globalThis.localStorage });
+    return fakeOnlineService;
+  }
+  const { createFirebaseOnlineService } = await import('../net/firebase.js');
+  return createFirebaseOnlineService();
+}
+
+function showOnlineBootstrapError(retry) {
+  elements.onlineRoot.hidden = false;
+  elements.onlineRoot.replaceChildren();
+  const message = document.createElement('p');
+  message.className = 'online-error';
+  message.textContent = 'Connexion impossible — réessayer';
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'confirm-button';
+  button.textContent = 'Réessayer';
+  button.addEventListener('click', retry);
+  elements.onlineRoot.append(message, button);
+}
+
+function receiveOnlineGame(nextDocument) {
+  onlineDocument = nextDocument;
+  state = nextDocument.state;
+  inputLocked = false;
+  networkMessage = '';
+  const activeId = state.players[state.activePlayerIndex].id;
+  const activePlace = nextDocument.players.find(({ id }) => id === activeId);
+  waitingName = activePlace?.connected === false ? activePlace.name : '';
+  const action = state.lastAction;
+  if (action?.playerId) {
+    const actorIndex = state.players.findIndex(({ id }) => id === action.playerId);
+    if (actorIndex >= 0) viewedPlayerIndex = actorIndex;
+  }
+  highlightedEntry = action?.type === 'entry' ? action : null;
+  displayedRemoteTurn = action?.type === 'entry' && !isMyRemoteTurn(nextDocument, onlineCredentials)
+    ? {
+      dice: [...action.dice],
+      held: [false, false, false, false, false],
+      rollCount: 3,
+      rerolled: true,
+      tamAnnouncement: null,
+    }
+    : null;
+  if (action?.type === 'announce-tam') {
+    const actor = state.players.find(({ id }) => id === action.playerId);
+    announcementText = `${actor.name} annonce Tam : ${categoryLabel(action.category)}`;
+  }
+  closePreview(elements.overlay);
+  render();
+  if (action?.type === 'roll') animateDice(elements.dice);
+}
+
+async function beginOnline({ gameId = null, create = false } = {}) {
+  elements.modeActions.hidden = true;
+  elements.localSetup.hidden = true;
+  elements.onlineRoot.hidden = false;
+  elements.onlineRoot.textContent = 'connexion…';
+  try {
+    const service = await loadOnlineService();
+    onlineController = createOnlineController({
+      root: elements.onlineRoot,
+      service,
+      onCredentials: (value) => { onlineCredentials = value; },
+      onGame: receiveOnlineGame,
+      onExit: () => {
+        state = null;
+        onlineDocument = null;
+        onlineCredentials = null;
+        networkMessage = '';
+        waitingName = '';
+        displayedRemoteTurn = null;
+        elements.modeActions.hidden = false;
+        render();
+      },
+      onError: () => {},
+    });
+    if (create) onlineController.showCreate();
+    else await onlineController.open(gameId);
+  } catch {
+    showOnlineBootstrapError(() => beginOnline({ gameId, create }));
+  }
+}
+
+elements.startOnline.addEventListener('click', () => beginOnline({ create: true }));
 
 function renderLocalNameInputs() {
   const count = Number(elements.localPlayerCount.value);
@@ -407,7 +554,8 @@ document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && !state?.handoffRequired) closePreview(elements.overlay);
 });
 
-if (state) saveGame(state);
+if (state && state.mode !== GAME_MODES.REMOTE) saveGame(state);
 render();
 requestPersistentStorage();
 if (state?.players[state.activePlayerIndex].kind === 'computer') runComputerTurn();
+if (initialOnlineGameId) beginOnline({ gameId: initialOnlineGameId });

@@ -14,6 +14,7 @@ import {
   announceTam,
   getLegalActions,
   rollDice,
+  toggleHeldDie,
 } from '../src/engine/rules.js';
 import { deserializeGame, serializeGame } from '../src/engine/serialize.js';
 import {
@@ -310,4 +311,50 @@ test('U14 — la reprise conserve le bon joueur et l’écran de passage', () =>
   assert.equal(ready.activePlayerIndex, 1);
   assert.equal(ready.handoffRequired, false);
   assert.equal(getLegalActions(ready).canRoll, true);
+});
+
+function remotePlayers() {
+  return [
+    { id: 'place-a', name: 'Alice', kind: 'remote' },
+    { id: 'place-b', name: 'Basile', kind: 'remote' },
+    { id: 'place-c', name: 'Chloé', kind: 'remote' },
+  ];
+}
+
+test('U1 multi — une partie distante à 3 joueurs termine sans passage de téléphone', () => {
+  const random = mulberry32(18072026);
+  let state = createGame({ mode: GAME_MODES.REMOTE, players: remotePlayers() });
+  while (!isGameOver(state)) {
+    state = rollDice(state, random);
+    let actions = getLegalActions(state);
+    if (actions.mustAnnounceTam || (!actions.entries.length && actions.announcements.length)) {
+      state = announceTam(state, actions.announcements[0].category);
+      actions = getLegalActions(state);
+    }
+    state = applyEntry(state, actions.entries[0].column, actions.entries[0].category);
+    assert.equal(state.handoffRequired, false);
+  }
+  assert.equal(state.completedTurns, 195);
+});
+
+test('U1 multi — classement complet avec égalité', () => {
+  const state = createGame({ mode: GAME_MODES.REMOTE, players: remotePlayers() });
+  for (const player of state.players) {
+    for (const column of Object.values(player.sheet)) {
+      for (const category of Object.keys(column)) column[category] = 0;
+    }
+  }
+  state.status = 'finished';
+  const outcome = getGameOutcome(state);
+  assert.equal(outcome.type, 'ranking');
+  assert.deepEqual(outcome.winnerIndexes, [0, 1, 2]);
+  assert.deepEqual(outcome.ranking.map(({ rank }) => rank), [1, 1, 1]);
+});
+
+test('U1 multi — sérialisation exacte mi-tour et garde attribuée au joueur', () => {
+  let state = createGame({ mode: GAME_MODES.REMOTE, players: remotePlayers() });
+  state = rollDice(state, mulberry32(7), [6, 6, 6, 2, 1]);
+  state = toggleHeldDie(state, 0);
+  assert.equal(state.lastAction.playerId, 'place-a');
+  assert.deepEqual(deserializeGame(serializeGame(state)), state);
 });

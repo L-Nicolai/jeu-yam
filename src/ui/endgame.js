@@ -44,7 +44,7 @@ function createPlayerSheet(player, totals) {
   return section;
 }
 
-export function showEndgame(root, state, { onReplay }) {
+export function showEndgame(root, state, { onReplay, replayLabel = 'Rejouer' }) {
   const outcome = getGameOutcome(state);
   const totals = getGameTotals(state).players;
   root.replaceChildren();
@@ -81,11 +81,12 @@ export function showEndgame(root, state, { onReplay }) {
   const replay = document.createElement('button');
   replay.type = 'button';
   replay.className = 'confirm-button replay-button';
-  replay.textContent = 'Rejouer';
-  replay.addEventListener('click', onReplay);
+  replay.textContent = replayLabel;
+  if (onReplay) replay.addEventListener('click', onReplay);
   screen.append(heading, summary);
   if (outcome.type === 'ranking') screen.append(ranking);
-  screen.append(sheets, replay);
+  screen.append(sheets);
+  if (onReplay) screen.append(replay);
   root.append(screen);
 }
 

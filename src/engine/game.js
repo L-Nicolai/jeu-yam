@@ -7,6 +7,7 @@ export const GAME_MODES = Object.freeze({
   SINGLE: 'single',
   COMPUTER: 'computer',
   LOCAL: 'local',
+  REMOTE: 'remote',
 });
 
 function clone(value) {
@@ -41,11 +42,15 @@ function validatePlayers(mode, players) {
   if (mode === GAME_MODES.COMPUTER && players.length !== 2) {
     throw new RangeError('Le mode Contre l’ordinateur exige exactement deux joueurs.');
   }
-  if (mode === GAME_MODES.LOCAL) {
+  if (mode === GAME_MODES.LOCAL || mode === GAME_MODES.REMOTE) {
     if (players.length < 2 || players.length > 5) {
-      throw new RangeError('Le mode À plusieurs exige de 2 à 5 joueurs.');
+      throw new RangeError('Le mode multijoueur exige de 2 à 5 joueurs.');
     }
-    if (players.some(({ kind }) => kind !== 'human')) {
+    const expectedKind = mode === GAME_MODES.REMOTE ? 'remote' : 'human';
+    if (players.some(({ kind }) => kind !== expectedKind)) {
+      if (mode === GAME_MODES.REMOTE) {
+        throw new RangeError('Le mode À distance accepte uniquement des joueurs distants.');
+      }
       throw new RangeError('Le mode À plusieurs accepte uniquement des joueurs humains locaux.');
     }
   }
@@ -143,7 +148,7 @@ export function getGameOutcome(state) {
   if (totals.length === 1) {
     return { type: 'single', winnerIndex: null, totals: [totals[0].grandTotal] };
   }
-  if (state.mode === GAME_MODES.LOCAL) {
+  if (state.mode === GAME_MODES.LOCAL || state.mode === GAME_MODES.REMOTE) {
     const ranking = getGameRanking(state);
     return {
       type: 'ranking',

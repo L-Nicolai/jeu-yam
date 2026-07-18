@@ -2,6 +2,7 @@ import { createGame, GAME_MODES } from './engine/game.js';
 import { deserializeGame, serializeGame } from './engine/serialize.js';
 
 export const STORAGE_KEY = 'yam-leslie-partie';
+export const ONLINE_PLACE_TOKENS_KEY = 'yam-leslie-online-places';
 const STORAGE_VERSION = 3;
 
 function resolveStorage(storage) {
@@ -10,6 +11,7 @@ function resolveStorage(storage) {
 
 export function saveGame(state, storage) {
   try {
+    if (state?.mode === GAME_MODES.REMOTE) return false;
     const target = resolveStorage(storage);
     const safeState = deserializeGame(serializeGame(state));
     const mode = Object.values(GAME_MODES).includes(safeState.mode) ? safeState.mode : GAME_MODES.COMPUTER;
@@ -17,6 +19,44 @@ export function saveGame(state, storage) {
     safeState.handoffRequired = Boolean(safeState.handoffRequired);
     if (!validModePlayers(mode, safeState.players)) return false;
     target.setItem(STORAGE_KEY, JSON.stringify({ version: STORAGE_VERSION, mode, state: safeState }));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function savePlaceToken(gameId, playerId, token, storage) {
+  try {
+    if (!gameId || !playerId || !token) return false;
+    const target = resolveStorage(storage);
+    const payload = JSON.parse(target.getItem(ONLINE_PLACE_TOKENS_KEY) ?? '{}');
+    payload[gameId] ??= {};
+    payload[gameId][playerId] = token;
+    target.setItem(ONLINE_PLACE_TOKENS_KEY, JSON.stringify(payload));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function loadPlaceTokens(gameId, storage) {
+  try {
+    const payload = JSON.parse(resolveStorage(storage).getItem(ONLINE_PLACE_TOKENS_KEY) ?? '{}');
+    const tokens = payload?.[gameId];
+    return tokens && typeof tokens === 'object' ? { ...tokens } : {};
+  } catch {
+    return {};
+  }
+}
+
+export function clearPlaceToken(gameId, playerId, storage) {
+  try {
+    const target = resolveStorage(storage);
+    const payload = JSON.parse(target.getItem(ONLINE_PLACE_TOKENS_KEY) ?? '{}');
+    if (!payload?.[gameId]) return true;
+    delete payload[gameId][playerId];
+    if (!Object.keys(payload[gameId]).length) delete payload[gameId];
+    target.setItem(ONLINE_PLACE_TOKENS_KEY, JSON.stringify(payload));
     return true;
   } catch {
     return false;

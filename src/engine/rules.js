@@ -168,7 +168,12 @@ export function toggleHeldDie(state, index) {
   if (!Number.isInteger(index) || index < 0 || index > 4) throw new RangeError('Dé inconnu.');
   const next = clone(state);
   next.turn.held[index] = !next.turn.held[index];
-  next.lastAction = { type: 'hold', index, held: next.turn.held[index] };
+  next.lastAction = {
+    type: 'hold',
+    playerId: next.players[next.activePlayerIndex].id,
+    index,
+    held: next.turn.held[index],
+  };
   return next;
 }
 

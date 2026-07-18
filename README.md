@@ -1,6 +1,6 @@
 # Le Yam de Leslie
 
-Une version téléphone du Yam familial de Leslie, jouable seule, contre un ordinateur correct mais battable, ou à 2 à 5 personnes sur le même téléphone. Les règles et les barèmes sont ceux de la feuille maison — pas ceux du Yahtzee classique.
+Une version téléphone du Yam familial de Leslie, jouable seule, contre un ordinateur correct mais battable, à 2 à 5 personnes sur le même téléphone ou à distance. Les règles et les barèmes sont ceux de la feuille maison — pas ceux du Yahtzee classique.
 
 ## Jouer
 
@@ -13,6 +13,11 @@ python3 -m http.server 8000
 ```
 
 Puis ouvrir `http://localhost:8000` dans le navigateur.
+
+Pour essayer le parcours à distance sans compte Firebase, ouvrir
+`http://localhost:8000/?simulation=1` dans deux onglets. La simulation partage
+la salle entre les onglets via le stockage du navigateur et n’est utilisée que
+pour le développement et les tests.
 
 ## Épingler sur un téléphone
 
@@ -34,6 +39,16 @@ node --test tests/
 Les icônes peuvent être régénérées, toujours sans paquet externe, avec `node scripts/generate-icons.js`.
 
 L’équité des dés — faces et combinaisons rares — est vérifiée statistiquement à chaque exécution des tests.
+
+## Préparer le compte Firebase pour le mode À distance
+
+Cette étape n’est à faire qu’une seule fois, par Leslie. Les joueurs invités n’ont aucun compte à créer.
+
+1. Dans la console Firebase, créer un projet gratuit, ajouter une application Web, puis créer une **Realtime Database** en **mode verrouillé**.
+2. Dans l’onglet **Règles** de la base, remplacer le contenu par celui de `docs/reference/firebase-rules.json`, puis publier les règles. Elles empêchent de lire la racine et donc d’énumérer les parties.
+3. Dans **Paramètres du projet > Vos applications**, copier la configuration Web dans `src/net/config.js`, puis passer `firebaseConfigured` à `true`. Ces identifiants sont publics par conception ; la protection repose sur les règles de la base.
+
+Le SDK Firebase est chargé depuis le CDN officiel uniquement après avoir choisi « À distance ». Les trois modes locaux ne chargent aucune dépendance réseau et continuent de fonctionner hors ligne.
 
 ## Publier une mise à jour
 

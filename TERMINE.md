@@ -257,3 +257,106 @@ Résultats définitifs (`node --test tests/`) : 52/52 verts.
 ### v1.3.1 — précision de règle (18 juillet 2026)
 
 Sur clarification de Leslie : une case barrée (0) du trio +/Moyen/− est neutre et ne contraint pas les autres cases ; l'inégalité ne s'applique qu'entre cases portant un score (R14 révisée, AE10, 2 tests). Suite complète : 54/54.
+
+## v2 multi (U1-U6)
+
+### Unités réalisées
+
+- **Prérequis U1.** Le test « un simple brelan ne déclenche jamais une annonce Carré » utilise désormais une source pseudo-aléatoire fixée, transmise au lancer comme à la décision IA.
+- **U1 — enveloppe moteur.** Mode `remote`, 2 à 5 joueurs uniformément `kind: 'remote'`, classement complet avec égalités, aucun passage de téléphone et `playerId` ajouté à l’action de garde. Les quatre gardes d’interface reposent sur l’identité de la place locale, jamais sur `kind`.
+- **U2 — protocole simulé.** Service mémoire complet : création, entrée atomique, réclamation atomique, lancement par la créatrice, abonnement, présence, publication, reprise et nouvelle manche. Le verrou vérifie le jeton du joueur au trait, une version strictement croissante et le numéro de manche. Les jetons de place utilisent une clé locale séparée ; un état distant est explicitement refusé par la sauvegarde locale.
+- **U3 — Firebase prêt à configurer.** Même interface, transactions RTDB, présence `onDisconnect`, imports CDN dynamiques et délai explicite sur connexion/lecture/écriture. Les règles refusent la lecture racine et verrouillent les publications par jeton/version/manche. `src/net/config.js` reste volontairement un espace réservé U7 avec `firebaseConfigured = false`. Le README documente les trois étapes de configuration ; aucun compte ou projet n’a été créé.
+- **U4 — seuil du multi.** Quatrième carte d’accueil, création et partage/copie du lien `#p/{gameId}`, prénom unique, salle commune, seuil de deux présents, porte adaptative, reprise automatique avec un seul jeton ou choix d’une place déconnectée. Le hash est traité avant toute lecture de sauvegarde locale. La simulation de développement partage son état entre onglets via le stockage du navigateur.
+- **U5 — partie en direct.** Chaque geste est publié et l’action suivante reste verrouillée jusqu’à confirmation. Les clients hors tour suivent la feuille, les dés, les gardes, les annonces Tam et l’inscription du joueur au trait ; les onglets restent consultables et le bandeau nomme connexion ou joueur absent. Le verrou visuel et le verrou protocolaire sont tous deux testés.
+- **U6 — reprises et fin.** Reprise mi-tour jusqu’à la publication suivante avec remplacement atomique du jeton de tour, classement à N joueurs, « Rejouer avec ce groupe » réservé à la créatrice, lien mort distingué d’une panne réseau et réessai proposé.
+
+### Sortie complète de `node --test tests/`
+
+```text
+✔ AE1 — Total (60) applique exactement le barème maison (0.55475ms)
+✔ barèmes canoniques — chiffres, quintes, Full, Carré et Yam (0.413666ms)
+✔ AE2 — un Yam de 6 inscrit au Full vaut 50 (0.053167ms)
+✔ AE3 — Carré maison : quatre 4 valent 56 et un Yam de 2 vaut 50 (0.055333ms)
+✔ les combinaisons manquées valent zéro avec une explication (0.085958ms)
+✔ AE4 — Tam annoncé et raté force zéro dans la case annoncée (0.506208ms)
+✔ Tam refuse une case remplie, toute inscription et tout barrage sans annonce (0.298333ms)
+✔ AE5 — une Quinte servie vaut 50 en Sèche puis toute relance interdit la colonne (0.230792ms)
+✔ Sèche chiffre : même un seul dé visé compte au premier lancer (0.08125ms)
+✔ AE6 — + sous un Moyen de 18 affiche zéro avant confirmation (0.102292ms)
+✔ le trio + > Moyen > − est vérifié contre toutes les valeurs déjà inscrites (0.074875ms)
+✔ AE7 — Descendante et Montante imposent leur ordre, Libre reste libre (0.133834ms)
+✔ AE8 — seules cases Sèche : relance bloquée avec explication (0.122542ms)
+✔ AE8 — seules cases Tam : annonce proposée d’office après le premier lancer (0.085ms)
+✔ AE9 — + doit dépasser − directement, même quand Moyen est vide (0.067541ms)
+✔ AE9 — inscrire − au-dessus du + déjà posé vaut zéro aussi (0.054542ms)
+✔ AE10 — une case barrée (0) du trio ne contraint pas les autres (0.05725ms)
+✔ AE10 — + et − restent contraints entre eux malgré un Moyen barré (0.049167ms)
+✔ un tour inscrit exactement une case et passe au joueur interchangeable suivant (0.154292ms)
+✔ les totaux de colonne et le TOTAL général appliquent la ligne Total (60) (0.176042ms)
+✔ sérialisation — aller-retour strict, y compris mi-tour avec annonce Tam active (0.444583ms)
+✔ parties génératives — 500 parties aléatoires terminent 130 tours sans blocage (2263.037167ms)
+✔ mode Jouer seule — une partie générative complète termine 65 tours sans blocage (2.005166ms)
+✔ sauvegarde locale — aller-retour exact, y compris annonce Tam active (0.295584ms)
+✔ sauvegarde v3 — le mode Jouer seule est conservé à la reprise (0.103792ms)
+✔ migration douce — un payload v1 reprend en mode contre l’ordinateur (0.10725ms)
+✔ migration douce — un payload v2 est restauré sans changer son mode (0.071166ms)
+✔ écran d’accueil — aucune sauvegarde valide ne représente une partie en cours (0.050041ms)
+✔ sauvegarde locale — JSON corrompu ou version inconnue démarre une partie propre (0.098125ms)
+✔ reprise ordinateur — une sauvegarde à son tour est terminée sans blocage (0.37975ms)
+✔ effacement explicite — la sauvegarde reste intacte tant que clearSavedGame n’est pas appelé (0.122458ms)
+✔ fin de partie — une égalité exacte reste une égalité sans vainqueur désigné (0.109791ms)
+✔ U14 — une partie locale à 3 joueurs termine 195 tours sans blocage (13.36875ms)
+✔ U14 — le classement complet attribue le même rang aux égalités (0.31325ms)
+✔ U14 — la reprise conserve le bon joueur et l’écran de passage (0.160834ms)
+✔ U1 multi — une partie distante à 3 joueurs termine sans passage de téléphone (10.024083ms)
+✔ U1 multi — classement complet avec égalité (0.21775ms)
+✔ U1 multi — sérialisation exacte mi-tour et garde attribuée au joueur (0.183084ms)
+✔ bon sens — avec 6-6-6-2-1, l’IA garde les trois 6 (0.124ms)
+✔ bon sens — une Quinte servie au premier lancer est inscrite en Sèche (0.085458ms)
+✔ cohérence Tam — un simple brelan ne déclenche jamais une annonce Carré (7.989542ms)
+✔ cohérence Tam — un Carré déjà servi peut être annoncé (0.104625ms)
+✔ arrêt raisonné — un Full modeste déjà servi n’est pas détruit par une relance (0.982041ms)
+✔ placement relatif — une case 1 vide est sacrifiée avant un Yam (0.0675ms)
+✔ protection du Total — trois 6 vont dans la colonne qui franchit le seuil de 60 (0.087084ms)
+✔ U12 — un seul 2 n’est pas inscrit quand une case à moindre perte est jouable (0.063666ms)
+✔ U12 — une case ordonnée 3 à 6 n’est pas sacrifiée avant une petite case libre (0.053916ms)
+✔ U13 — une annonce Tam-2 garde exclusivement les 2, jamais le plus gros groupe (0.868833ms)
+✔ U13 — une cible Quinte ne garde qu’un exemplaire de chaque valeur utile (0.104875ms)
+✔ U13 — une cible Full conserve le brelan et la paire, ou amorce un groupe (0.0645ms)
+✔ légalité — 1 000 parties IA auto-jouées terminent sans blocage ni coup illégal (448196.135958ms)
+✔ performance — une partie complète auto-jouée prend moins d’une seconde (397.270875ms)
+✔ calibrage U9 — au moins 95 % de victoires sur 300 parties contre le joueur aléatoire légal (67076.504875ms)
+ℹ 300/300 victoires, score moyen 1117.4
+✔ calibrage U12/U13 — plus de colonnes au seuil et au plus 1,5 Yam réussi par partie (89950.615917ms)
+ℹ 63.8 % de colonnes au seuil, 1.230 Yam réussis par partie, score moyen 1118.3
+✔ toute décision IA est applicable par le même moteur de règles (44.152542ms)
+✔ équité U11 — chaque face est uniforme dans chacune des cinq positions sur 60 000 lancers (499.126875ms)
+✔ équité U15 — Yam, Carré exact et Quinte servis suivent leurs fréquences théoriques (1835.514375ms)
+ℹ Yam 0.083 %, Carré 1.981 %, Quinte 3.054 %
+✔ U2/AE1/AE6 — entrée atomique et prénoms uniques (0.495375ms)
+✔ U2 — une seule des deux réclamations concurrentes gagne (0.285833ms)
+✔ U2/KTD2 — verrou de tour, version et manche (0.2355ms)
+✔ U2/AE2 — deux clients jouent une partie complète publiée action par action (15.544166ms)
+✔ U2/AE3 — déconnexion et reprise mi-tour depuis un autre appareil (0.315667ms)
+✔ U2/AE7 — rejouer conserve les places, renouvelle la manche et vide les feuilles (0.2455ms)
+✔ U2/AE4/KTD7 — jetons séparés et état distant absent de la sauvegarde locale (0.152958ms)
+✔ U4 — la porte adaptative distingue saisie, reprise et partie complète (0.095709ms)
+✔ U4/U5 — seuil de lancement et garde visuelle fondée sur ma place (0.124667ms)
+✔ U5/AE5 — une annonce Tam publiée est propagée aux abonnés (0.27675ms)
+✔ U6/R13 — lien mort et panne réseau produisent deux issues distinctes (0.045625ms)
+✔ U4 smoke — deux instances de simulation partagent la même salle (0.087416ms)
+ℹ tests 69
+ℹ suites 0
+ℹ pass 69
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 610386.740041
+```
+
+### Écarts et limites du plan
+
+1. **Smokes visuels U4-U6 non exécutés.** Le runtime de contrôle du navigateur a été initialisé, puis a retourné une liste vide (`[]`). Le parcours réel à deux onglets et le rendu téléphone n’ont donc pas été revendiqués ; ils sont couverts ici par les scénarios à deux clients et deux instances de simulation, plus les contrôles de syntaxe et de structure.
+2. **U3 prouvé sans service réel, comme prévu.** Aucun compte ni projet Firebase n’a été créé, aucune clé n’a été ajoutée et aucune requête réelle n’a été émise. La conformité porte sur les signatures, transactions, règles, import dynamique et délais ; la preuve multi-clients Firebase et la sécurité publiée restent U7.
+3. **Aucun paquet, commit, push ou publication.** `package.json` reste sans dépendance. Aucun accès distant, compte, projet ou publication n’a été créé.

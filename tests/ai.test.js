@@ -47,12 +47,13 @@ test('bon sens — une Quinte servie au premier lancer est inscrite en Sèche', 
 });
 
 test('cohérence Tam — un simple brelan ne déclenche jamais une annonce Carré', () => {
+  const random = mulberry32(20260718);
   let state = createGame();
   for (const category of Object.keys(state.players[0].sheet.dry)) {
     state.players[0].sheet.dry[category] = 0;
   }
-  state = rollDice(state, Math.random, [6, 6, 6, 2, 1]);
-  const action = chooseAiAction(state);
+  state = rollDice(state, random, [6, 6, 6, 2, 1]);
+  const action = chooseAiAction(state, random);
   assert.notDeepEqual(
     { type: action.type, category: action.category },
     { type: 'announce-tam', category: 'fourKind' },

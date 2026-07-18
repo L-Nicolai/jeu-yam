@@ -1,0 +1,21 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "games": {
+      "$gameId": {
+        ".read": true,
+        ".write": "(!data.exists() && newData.child('gameId').val() === $gameId && newData.child('phase').val() === 'lobby' && newData.child('players').hasChildren()) || (data.exists() && newData.child('gameId').val() === data.child('gameId').val() && ((newData.child('mutation/type').val() === 'publish' && newData.child('mutation/token').val() === data.child('turnToken').val() && newData.child('version').isNumber() && newData.child('version').val() > data.child('version').val() && newData.child('round').val() === data.child('round').val()) || ((newData.child('mutation/type').val() === 'start' || newData.child('mutation/type').val() === 'replay') && newData.child('mutation/playerId').val() === data.child('creatorPlayerId').val() && newData.child('mutation/token').val() === data.child('players').child(data.child('creatorPlayerId').val()).child('token').val()) || (newData.child('mutation/type').val() === 'claim' && newData.child('players').child(newData.child('mutation/playerId').val()).child('token').val() === newData.child('mutation/token').val() && (data.child('players').child(newData.child('mutation/playerId').val()).child('connected').val() !== true || data.child('players').child(newData.child('mutation/playerId').val()).child('token').val() === newData.child('mutation/token').val())) || (newData.child('mutation/type').val() === 'join' && data.child('phase').val() === 'lobby' && !data.child('players').child(newData.child('mutation/playerId').val()).exists() && newData.child('players').child(newData.child('mutation/playerId').val()).child('token').val() === newData.child('mutation/token').val()) || (newData.child('mutation/type').val() === 'presence' && newData.child('mutation/token').val() === data.child('players').child(newData.child('mutation/playerId').val()).child('token').val())))",
+        ".validate": "newData.hasChildren(['gameId', 'phase', 'creatorPlayerId', 'players', 'version', 'round', 'turnToken']) && newData.child('gameId').isString() && newData.child('gameId').val().length >= 18 && (newData.child('phase').val() === 'lobby' || newData.child('phase').val() === 'playing' || newData.child('phase').val() === 'finished') && newData.child('version').isNumber() && newData.child('version').val() >= 0 && newData.child('round').isNumber() && newData.child('round').val() >= 0",
+        "players": {
+          "$playerId": {
+            ".validate": "newData.hasChildren(['id', 'name', 'kind', 'connected', 'creator', 'token']) && newData.child('id').val() === $playerId && newData.child('name').isString() && newData.child('name').val().length > 0 && newData.child('name').val().length <= 24 && newData.child('kind').val() === 'remote' && newData.child('connected').isBoolean() && newData.child('token').isString() && newData.child('token').val().length >= 24",
+            "connected": {
+              ".write": "newData.isBoolean()"
+            }
+          }
+        }
+      }
+    }
+  }
+}
