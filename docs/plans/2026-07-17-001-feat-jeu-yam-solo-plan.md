@@ -64,7 +64,7 @@ Ce solo sert de banc d'essai : le multijoueur en ligne en direct, chacun sur son
 - R11. Quinte : exige 5 dés consécutifs (1-2-3-4-5 ou 2-3-4-5-6) ; score = somme des 5 dés + 30 (soit 45 ou 50).
 - R12. Full : 3 dés identiques + 2 dés identiques ; score = somme des 5 dés + 20 ; un Yam est accepté comme Full (somme des 5 dés + 20 ; ex. cinq 6 → 50).
 - R13. Carré : score = somme des 4 dés identiques + 40 (carré de 6 → 64 ; carré d'as → 44) ; un Yam inscrit au Carré = somme des 5 dés + 40 (Yam de 2 → 50).
-- R14. Cases +, Moyen, − : score = somme des 5 dés ; dans chaque colonne, l'inégalité + > Moyen > − doit être vraie entre toutes les cases déjà inscrites du trio au moment d'inscrire — y compris directement entre + et − quand Moyen est encore vide (+ = 11 avec − = 20 est interdit) ; toute inscription qui la viole vaut 0 ; leur ordre interne est libre là où la colonne le permet.
+- R14. Cases +, Moyen, − : score = somme des 5 dés ; dans chaque colonne, l'inégalité + > Moyen > − doit être vraie entre toutes les cases déjà inscrites du trio au moment d'inscrire — y compris directement entre + et − quand Moyen est encore vide (+ = 11 avec − = 20 est interdit) ; toute inscription qui la viole vaut 0 ; une case du trio barrée ou annulée (0) est neutre et n'impose aucune contrainte aux deux autres — l'inégalité ne s'applique qu'entre les cases portant un score ; leur ordre interne est libre là où la colonne le permet.
 - R15. Yam : 5 dés identiques ; score = somme des 5 dés + 60.
 - R16. Le moteur de règles (dés, contraintes de colonnes, barème, tours) est strictement séparé de l'interface, de sorte que le mode multijoueur puisse le réutiliser sans réécriture.
 
@@ -129,6 +129,7 @@ flowchart TB
 - AE7. **Covers R3.** Given la case « 2 » de la Descendante non remplie, Then la case « 3 » de la Descendante n'est pas inscriptible.
 - AE8. **Covers R8.** Given une fin de partie où seules des cases Sèche restent jouables, Then la relance est désactivée avec un message d'explication ; Given une fin de partie où seules des cases Tam restent jouables, Then l'annonce est proposée d'office après le 1ᵉʳ lancer.
 - AE9. **Covers R14.** Given − = 20 inscrit et Moyen encore vide dans une colonne, When un joueur (humain ou ordinateur) prévisualise ou inscrit + avec des dés totalisant 11, Then la case vaut 0 avec la raison « + doit être strictement supérieur à − » — jamais 11 points inscrits.
+- AE10. **Covers R14.** Given Moyen barré (0) dans une colonne, When on inscrit − avec des dés totalisant 18, Then les 18 points sont valides — le 0 barré ne contraint pas ; And l'inégalité continue de s'appliquer entre + et − (AE9).
 
 ### Success Criteria
 

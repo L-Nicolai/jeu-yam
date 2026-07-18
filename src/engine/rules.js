@@ -42,9 +42,10 @@ function columnAllowsCategory(state, column, category) {
 
 function trioConstraint(sheetColumn, category, points) {
   if (!TRIO_KEYS.includes(category)) return null;
-  const plus = category === 'plus' ? points : sheetColumn.plus;
-  const middle = category === 'middle' ? points : sheetColumn.middle;
-  const minus = category === 'minus' ? points : sheetColumn.minus;
+  const written = (value) => (value === null || value === 0 ? null : value);
+  const plus = category === 'plus' ? points : written(sheetColumn.plus);
+  const middle = category === 'middle' ? points : written(sheetColumn.middle);
+  const minus = category === 'minus' ? points : written(sheetColumn.minus);
   if (plus !== null && middle !== null && plus <= middle) return '+ doit être strictement supérieur à Moyen';
   if (middle !== null && minus !== null && middle <= minus) return 'Moyen doit être strictement supérieur à −';
   if (plus !== null && minus !== null && plus <= minus) return '+ doit être strictement supérieur à −';

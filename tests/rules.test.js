@@ -131,3 +131,20 @@ test('AE9 — inscrire − au-dessus du + déjà posé vaut zéro aussi', () => 
   assert.match(preview.reason, /\+ doit être strictement supérieur à −/);
 });
 
+test('AE10 — une case barrée (0) du trio ne contraint pas les autres', () => {
+  const state = afterFirstRoll([4, 4, 3, 4, 3]);
+  state.players[0].sheet.free.middle = 0;
+  const preview = previewEntry(state, 'free', 'minus');
+  assert.equal(preview.points, 18);
+  assert.equal(preview.validCombination, true);
+});
+
+test('AE10 — + et − restent contraints entre eux malgré un Moyen barré', () => {
+  const state = afterFirstRoll([2, 2, 2, 2, 3]);
+  state.players[0].sheet.free.middle = 0;
+  state.players[0].sheet.free.minus = 20;
+  const preview = previewEntry(state, 'free', 'plus');
+  assert.equal(preview.points, 0);
+  assert.match(preview.reason, /\+ doit être strictement supérieur à −/);
+});
+

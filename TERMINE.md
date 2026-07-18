@@ -253,3 +253,7 @@ Résultats définitifs (`node --test tests/`) : 52/52 verts.
 - 1 000 parties auto-jouées sans blocage ni coup illégal ; partie complète simulée en 0,42 s.
 - Équité : chaque face uniforme sur 60 000 tirages par position ; Yam sec 0,076 %, Carré 1,874 %, Quinte 3,079 % (théories : 0,077 / 1,929 / 3,086).
 - Gardes conformes aux annonces Tam (Tam-2 → garder les 2 ; Quinte → valeurs uniques ; Full → brelan + paire).
+
+### v1.3.1 — précision de règle (18 juillet 2026)
+
+Sur clarification de Leslie : une case barrée (0) du trio +/Moyen/− est neutre et ne contraint pas les autres cases ; l'inégalité ne s'applique qu'entre cases portant un score (R14 révisée, AE10, 2 tests). Suite complète : 54/54.
