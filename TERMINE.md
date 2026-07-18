@@ -239,3 +239,17 @@ Mesure reproductible sur 200 parties IA contre IA, avec les mêmes graines avant
 1. **Smoke navigateur non exécutable.** Le contrôle navigateur local a été initialisé conformément au workflow prévu, mais aucun navigateur n’est disponible dans le bac à sable (`browsers: []`). Les écrans multijoueurs ont donc été vérifiés statiquement (syntaxe, structure DOM/CSS et chemins d’interaction) et par les tests du moteur ; le passage au doigt et le rendu à 390 px restent à valider sur appareil réel.
 2. **Aucun commit ni accès distant.** Aucun push, dépôt distant ou accès réseau n’a été effectué. Le travail reste dans le worktree local ; `.git` est exposé en lecture seule dans cet environnement, conformément au cas prévu par la demande.
 3. **Aucune dépendance ajoutée.** `package.json` reste minimal, sans paquet npm, et toute la v1.2 utilise uniquement JavaScript natif et les modules standards de Node pour les tests.
+
+## v1.3 — 18 juillet 2026
+
+Unités : U16 (trio transitif, bug signalé en partie réelle), U17 (IA à espérance simulée), U18 (finitions d'interface).
+
+Déroulé honnête : deux runs Codex se sont enlisés sur le calibrage de U17 sans livrer (aucun commit, essais annulés au fil de l'eau pour le premier, arrêt sur intervention pour le second). L'IA Monte-Carlo du second run a été récupérée depuis le répertoire de travail par Claude, qui a corrigé trois prix de sa fonction d'évaluation (terme marginal absolu sur la partie haute avec prime de complétion, pénalité de positionnement du trio) et adapté deux tests d'étiquettes. U16 et U18 ont été implémentées directement par Claude.
+
+Résultats définitifs (`node --test tests/`) : 52/52 verts.
+
+- Score moyen de l'ordinateur : 1 105,8 (calibrage U9) et 1 099,7 (calibrage U12/U13) — dans l'échelle familiale 1 050-1 350.
+- 63,3 % des colonnes complétées atteignent le seuil de 60 ; 1,18 Yam réussi par partie.
+- 1 000 parties auto-jouées sans blocage ni coup illégal ; partie complète simulée en 0,42 s.
+- Équité : chaque face uniforme sur 60 000 tirages par position ; Yam sec 0,076 %, Carré 1,874 %, Quinte 3,079 % (théories : 0,077 / 1,929 / 3,086).
+- Gardes conformes aux annonces Tam (Tam-2 → garder les 2 ; Quinte → valeurs uniques ; Full → brelan + paire).

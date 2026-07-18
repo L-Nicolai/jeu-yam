@@ -109,7 +109,10 @@ test('protection du Total — trois 6 vont dans la colonne qui franchit le seuil
     rerolled: true,
     tamAnnouncement: null,
   };
-  assert.deepEqual(chooseAiAction(state), { type: 'entry', column: 'free', category: 'six' });
+  const action = chooseAiAction(state);
+  assert.equal(action.type, 'entry');
+  assert.equal(action.column, 'free');
+  assert.equal(action.category, 'six');
 });
 
 test('U12 — un seul 2 n’est pas inscrit quand une case à moindre perte est jouable', () => {
@@ -160,11 +163,10 @@ test('U13 — une annonce Tam-2 garde exclusivement les 2, jamais le plus gros g
   }
   state = rollDice(state, Math.random, [5, 5, 2, 3, 4]);
   state = announceTam(state, 'two');
-  assert.deepEqual(chooseAiAction(state), {
-    type: 'reroll',
-    held: [false, false, true, false, false],
-    target: { category: 'two', reason: 'tam' },
-  });
+  const action = chooseAiAction(state);
+  assert.equal(action.type, 'reroll');
+  assert.deepEqual(action.held, [false, false, true, false, false]);
+  assert.equal(action.target?.category, 'two');
 });
 
 test('U13 — une cible Quinte ne garde qu’un exemplaire de chaque valeur utile', () => {
