@@ -28,7 +28,7 @@ export function closePreview(root) {
   root.replaceChildren();
 }
 
-export function showEntryPreview(root, preview, { onConfirm, onStrike, onCancel }) {
+export function showEntryPreview(root, preview, { onConfirm, onCancel }) {
   const card = shell(root, categoryLabel(preview.category));
   const score = document.createElement('p');
   score.className = 'preview-score';
@@ -39,7 +39,6 @@ export function showEntryPreview(root, preview, { onConfirm, onStrike, onCancel 
   const actions = document.createElement('div');
   actions.className = 'preview-actions';
   actions.append(button('Annuler', 'secondary-button', onCancel));
-  if (preview.points > 0) actions.append(button('Barrer · 0', 'danger-button', onStrike));
   actions.append(button(preview.points === 0 ? 'Inscrire 0' : 'Inscrire', 'confirm-button', onConfirm));
   card.append(score, reason, actions);
 }

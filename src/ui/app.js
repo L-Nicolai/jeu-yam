@@ -218,8 +218,7 @@ function handleCell(column, category, availability) {
   const preview = previewEntry(state, column, category);
   showEntryPreview(elements.overlay, preview, {
     onCancel: () => closePreview(elements.overlay),
-    onConfirm: () => finishHumanEntry(column, category, false),
-    onStrike: () => finishHumanEntry(column, category, true),
+    onConfirm: () => finishHumanEntry(column, category),
   });
 }
 
@@ -246,8 +245,8 @@ function finishHandoff() {
   render();
 }
 
-async function finishHumanEntry(column, category, strike) {
-  updateState(applyEntry(state, column, category, { strike }));
+async function finishHumanEntry(column, category) {
+  updateState(applyEntry(state, column, category));
   if (lastEntryIsYam()) celebrateYam();
   closePreview(elements.overlay);
   render();
