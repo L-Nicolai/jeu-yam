@@ -199,17 +199,43 @@ function lastEntryIsYam() {
 
 // Joue d'office les coups sans alternative : premier lancer d'un tour qui suit
 // une inscription, et inscription Tam quand plus aucune relance n'est possible.
+// Chaque coup automatique laisse un temps de lecture ; agir soi-même pendant
+// ce temps (cliquer la case ou lancer) prend simplement la main.
+let autoPlayPending = false;
+
 function maybeAutoPlay() {
+  if (autoPlayPending) return;
   if (!state || state.status !== 'playing' || state.handoffRequired || inputLocked) return;
   if (!canCurrentPlayerAct()) return;
   if (state.turn.tamAnnouncement && state.turn.rollCount === 3) {
-    finishHumanEntry('tam', state.turn.tamAnnouncement);
+    autoPlayAfterBeat(1400,
+      () => state.turn.tamAnnouncement && state.turn.rollCount === 3,
+      () => finishHumanEntry('tam', state.turn.tamAnnouncement, { pauseAfterWrite: 1100 }));
     return;
   }
   if (state.turn.rollCount === 0
     && (state.mode !== GAME_MODES.REMOTE || state.lastAction?.type === 'entry')) {
-    handleRoll();
+    if (state.mode === GAME_MODES.REMOTE) {
+      autoPlayAfterBeat(1200, () => state.turn.rollCount === 0, handleRoll);
+    } else {
+      handleRoll();
+    }
   }
+}
+
+async function autoPlayAfterBeat(duration, stillValid, action) {
+  autoPlayPending = true;
+  try {
+    await pause(duration);
+  } finally {
+    autoPlayPending = false;
+  }
+  if (!state || state.status !== 'playing' || state.handoffRequired || inputLocked) return;
+  if (!canCurrentPlayerAct() || !stillValid()) {
+    maybeAutoPlay();
+    return;
+  }
+  action();
 }
 
 function handleRoll() {
@@ -262,11 +288,12 @@ function finishHandoff() {
   maybeAutoPlay();
 }
 
-async function finishHumanEntry(column, category) {
+async function finishHumanEntry(column, category, { pauseAfterWrite = 0 } = {}) {
   updateState(applyEntry(state, column, category));
   if (lastEntryIsYam()) celebrateYam();
   closePreview(elements.overlay);
   render();
+  if (pauseAfterWrite) await pause(pauseAfterWrite);
   await runComputerTurn();
   maybeAutoPlay();
 }
