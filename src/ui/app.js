@@ -197,12 +197,28 @@ function lastEntryIsYam() {
     && dice.every((die) => die === dice[0]);
 }
 
+// Joue d'office les coups sans alternative : premier lancer d'un tour qui suit
+// une inscription, et inscription Tam quand plus aucune relance n'est possible.
+function maybeAutoPlay() {
+  if (!state || state.status !== 'playing' || state.handoffRequired || inputLocked) return;
+  if (!canCurrentPlayerAct()) return;
+  if (state.turn.tamAnnouncement && state.turn.rollCount === 3) {
+    finishHumanEntry('tam', state.turn.tamAnnouncement);
+    return;
+  }
+  if (state.turn.rollCount === 0
+    && (state.mode !== GAME_MODES.REMOTE || state.lastAction?.type === 'entry')) {
+    handleRoll();
+  }
+}
+
 function handleRoll() {
   closePreview(elements.overlay);
   viewedPlayerIndex = state.activePlayerIndex;
   updateState(rollDice(state));
   render();
   animateDice(elements.dice);
+  maybeAutoPlay();
 }
 
 function handleToggle(index) {
@@ -243,6 +259,7 @@ function finishHandoff() {
   announcementText = '';
   closePreview(elements.overlay);
   render();
+  maybeAutoPlay();
 }
 
 async function finishHumanEntry(column, category) {
@@ -251,6 +268,7 @@ async function finishHumanEntry(column, category) {
   closePreview(elements.overlay);
   render();
   await runComputerTurn();
+  maybeAutoPlay();
 }
 
 function pause(duration) {
@@ -329,6 +347,7 @@ async function runComputerTurn() {
   computerMessage = '';
   viewedPlayerIndex = state.activePlayerIndex;
   render();
+  maybeAutoPlay();
 }
 
 elements.roll.addEventListener('click', handleRoll);
@@ -448,6 +467,7 @@ function receiveOnlineGame(nextDocument) {
   closePreview(elements.overlay);
   render();
   if (action?.type === 'roll') animateDice(elements.dice);
+  maybeAutoPlay();
 }
 
 async function beginOnline({ gameId = null, create = false } = {}) {
