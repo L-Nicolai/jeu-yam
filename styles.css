@@ -11,6 +11,10 @@
   --terracotta-soft: #f4ded6;
   --playable: #fff1c7;
   --kept: #38665a;
+  --felt: #2e6a4e;
+  --felt-deep: #1e4a35;
+  --felt-light: #3a7d5d;
+  --ivory: #f6efdd;
   font-family: Inter, ui-rounded, "SF Pro Rounded", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
@@ -28,7 +32,8 @@ body {
   height: 100%;
   margin: 0;
   overflow: hidden;
-  background: var(--cream);
+  /* Tapis de jeu ; l'écran d'accueil pose son propre fond crème par-dessus. */
+  background: radial-gradient(circle at 50% 18%, var(--felt-light), var(--felt) 52%, var(--felt-deep) 100%) fixed var(--felt);
   color: var(--ink);
 }
 
@@ -265,8 +270,26 @@ button {
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 7px;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid rgb(255 255 255 / 20%);
   padding: 0 2px 5px;
+}
+
+.game-header .eyebrow,
+.game-header .score-summary small {
+  color: #cfe3d3;
+}
+
+.game-header .turn-summary strong,
+.game-header .score-summary b {
+  color: var(--ivory);
+}
+
+.game-header .score-summary i {
+  color: rgb(255 255 255 / 38%);
+}
+
+.game-header .text-button {
+  color: #ecd9ae;
 }
 
 .turn-summary,
@@ -335,6 +358,10 @@ button {
   min-height: 0;
   display: grid;
   grid-template-rows: 28px 16px minmax(0, 1fr);
+  border-radius: 13px;
+  padding: 5px 5px 6px;
+  background: var(--paper);
+  box-shadow: 0 12px 34px rgb(9 32 22 / 38%);
 }
 
 .app-shell.single-player .sheet-panel {
@@ -511,7 +538,10 @@ button {
   grid-template-areas: "message message" "dice button";
   align-items: center;
   gap: 5px 10px;
-  padding: 1px 2px 0;
+  padding: 3px 4px 1px;
+  border-radius: 13px;
+  background: radial-gradient(circle at 50% -30%, rgb(255 255 255 / 10%), transparent 70%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 14%), inset 0 -6px 16px rgb(9 32 22 / 30%);
 }
 
 .turn-message {
@@ -520,6 +550,7 @@ button {
   margin: 0;
   text-align: center;
   letter-spacing: 0;
+  color: #d6e7da;
 }
 
 .dice-row {
@@ -532,17 +563,39 @@ button {
 .die {
   width: clamp(42px, 12vw, 58px);
   aspect-ratio: 1;
-  border: 1px solid var(--line-strong);
-  border-radius: 11px;
-  background: var(--paper);
-  color: var(--ink);
-  box-shadow: 0 3px 0 #d8cbc1;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(22px, 7vw, 34px);
-  font-weight: 800;
+  border: 1px solid #d9d0bd;
+  border-radius: 18%;
+  background: linear-gradient(145deg, #fffdf4, #efe7d2);
+  color: #2c241f;
+  box-shadow: 0 4px 8px rgb(9 32 22 / 45%), inset 0 1px 0 #fff;
   cursor: pointer;
-  transition: transform 120ms ease, background 120ms ease, color 120ms ease;
+  display: grid;
+  grid-template-areas: "tl . tr" "ml c mr" "bl . br";
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  padding: clamp(7px, 1.9vw, 10px);
+  gap: clamp(2px, 0.6vw, 3px);
+  transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease;
 }
+
+.pip {
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 1;
+  align-self: center;
+  justify-self: center;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: inset 0 1px 1px rgb(0 0 0 / 35%);
+}
+
+.pip-tl { grid-area: tl; }
+.pip-tr { grid-area: tr; }
+.pip-ml { grid-area: ml; }
+.pip-mr { grid-area: mr; }
+.pip-c { grid-area: c; }
+.pip-bl { grid-area: bl; }
+.pip-br { grid-area: br; }
 
 .die:disabled {
   cursor: default;
@@ -550,11 +603,11 @@ button {
 }
 
 .die.held {
-  background: var(--kept);
-  border-color: var(--kept);
-  color: white;
-  box-shadow: 0 3px 0 #27493f;
-  transform: translateY(-2px);
+  background: linear-gradient(145deg, #d8815f, var(--terracotta));
+  border-color: var(--terracotta-dark);
+  color: #fff8f2;
+  box-shadow: 0 6px 12px rgb(9 32 22 / 50%), inset 0 1px 0 rgb(255 255 255 / 45%);
+  transform: translateY(-3px);
 }
 
 .die.rolling {
