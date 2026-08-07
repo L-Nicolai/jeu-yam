@@ -125,7 +125,16 @@ export function getLegalActions(state) {
 
   const sheet = activeSheet(state);
   const announcements = state.turn.rollCount === 1 && !state.turn.tamAnnouncement
-    ? emptyCategories(sheet, 'tam').map((category) => ({ type: 'announce-tam', column: 'tam', category }))
+    ? emptyCategories(sheet, 'tam').map((category) => {
+      const scored = scoreCategory(category, state.turn.dice);
+      const constraint = trioConstraint(sheet.tam, category, scored.points);
+      return {
+        type: 'announce-tam',
+        column: 'tam',
+        category,
+        points: !constraint && scored.valid ? scored.points : 0,
+      };
+    })
     : [];
   const entries = getPlayableEntries(state);
   const emptyOutsideDry = ['descending', 'free', 'ascending'].some((column) => emptyCategories(sheet, column).length > 0);

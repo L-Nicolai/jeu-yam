@@ -28,7 +28,9 @@ export function renderGrid(container, state, {
   const actions = showActions ? getLegalActions(state) : { entries: [], announcements: [] };
   const playable = new Set(actions.entries.map(({ column, category }) => `${column}:${category}`));
   const announceable = new Set(actions.announcements.map(({ column, category }) => `${column}:${category}`));
-  const potential = new Map(actions.entries.map(({ column, category, points }) => [`${column}:${category}`, points]));
+  const potential = new Map([...actions.entries, ...actions.announcements]
+    .filter(({ points }) => points !== undefined)
+    .map(({ column, category, points }) => [`${column}:${category}`, points]));
 
   container.replaceChildren();
   container.append(cell('grid-corner', 'Cases'));

@@ -131,6 +131,14 @@ test('AE9 — inscrire − au-dessus du + déjà posé vaut zéro aussi', () => 
   assert.match(preview.reason, /\+ doit être strictement supérieur à −/);
 });
 
+test('les annonces Tam portent les points que les dés rapporteraient', () => {
+  const state = afterFirstRoll([2, 2, 2, 3, 4]);
+  const { announcements } = getLegalActions(state);
+  assert.equal(announcements.find(({ category }) => category === 'two').points, 6);
+  assert.equal(announcements.find(({ category }) => category === 'straight').points, 0);
+  assert.equal(announcements.find(({ category }) => category === 'plus').points, 13);
+});
+
 test('AE10 — une case barrée (0) du trio ne contraint pas les autres', () => {
   const state = afterFirstRoll([4, 4, 3, 4, 3]);
   state.players[0].sheet.free.middle = 0;
