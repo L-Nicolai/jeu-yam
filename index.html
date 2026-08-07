@@ -34,7 +34,34 @@
             <strong>À distance</strong>
             <span>De 2 à 5 personnes, chacune sur son téléphone</span>
           </button>
+          <button class="rules-link" id="show-rules" type="button">ⓘ Règles du jeu</button>
         </div>
+        <section class="rules-panel" id="rules-panel" hidden aria-labelledby="rules-title">
+          <h2 id="rules-title">Règles du jeu</h2>
+          <p><strong>Le but.</strong> Remplir les 65 cases de sa feuille (13 cases × 5 colonnes). Le meilleur TOTAL gagne.</p>
+          <p><strong>Le tour.</strong> Jusqu’à 3 lancers ; entre deux lancers, touchez les dés à garder. Puis inscrivez exactement une case — une case ratée s’inscrit à 0.</p>
+          <p><strong>Les 5 colonnes.</strong></p>
+          <ul>
+            <li><strong>Descendante</strong> — dans l’ordre, du 1 vers le Yam.</li>
+            <li><strong>Libre</strong> — dans n’importe quel ordre.</li>
+            <li><strong>Montante</strong> — dans l’ordre, du Yam vers le 1.</li>
+            <li><strong>Tam</strong> — sur annonce faite juste après le 1ᵉʳ lancer : la case annoncée devient obligatoire, réussie ou non (après le 3ᵉ lancer, elle s’inscrit toute seule).</li>
+            <li><strong>Sèche</strong> — uniquement avec le résultat du 1ᵉʳ lancer du tour ; toute relance la ferme pour ce tour.</li>
+          </ul>
+          <p><strong>La partie haute (1 à 6).</strong> Chaque case vaut la somme des dés de sa valeur. Quand les six cases d’une colonne sont remplies, la ligne Total (60) s’applique : 60 points ou plus → 90 + 5 par point au-dessus de 60 ; moins de 60 → la somme − 5 par point manquant.</p>
+          <p><strong>Les combinaisons.</strong></p>
+          <ul>
+            <li><strong>Quinte</strong> — 1-2-3-4-5 = 45 ; 2-3-4-5-6 = 50.</li>
+            <li><strong>Full</strong> — somme des 5 dés + 20 (un Yam peut servir de Full).</li>
+            <li><strong>Carré</strong> — somme des 4 dés + 40 (avec un Yam, les 5 dés comptent).</li>
+            <li><strong>Yam</strong> — somme des 5 dés + 60.</li>
+            <li><strong>+ / Moyen / −</strong> — somme des 5 dés, avec l’ordre + &gt; Moyen &gt; − ; une case barrée (0) ne contraint pas les autres.</li>
+          </ul>
+          <p><strong>À distance.</strong> Créez une partie et partagez le lien : chacun joue depuis son téléphone. En cas de coupure, rouvrez le même lien pour reprendre votre place.</p>
+          <div class="local-setup-actions">
+            <button class="confirm-button" id="close-rules" type="button">Retour</button>
+          </div>
+        </section>
         <form class="local-setup" id="local-setup" hidden>
           <div class="local-setup-heading">
             <strong>Qui joue ?</strong>

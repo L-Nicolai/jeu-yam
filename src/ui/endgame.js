@@ -1,4 +1,4 @@
-import { CATEGORIES, COLUMNS } from '../engine/constants.js';
+import { CATEGORIES, COLUMNS, UPPER_KEYS } from '../engine/constants.js';
 import { getGameOutcome, getGameTotals } from '../engine/game.js';
 
 function createPlayerSheet(player, totals) {
@@ -17,6 +17,19 @@ function createPlayerSheet(player, totals) {
   }
   head.append(headRow);
   const body = document.createElement('tbody');
+  const totalRowFor = (labelText, className, valueFor) => {
+    const row = document.createElement('tr');
+    row.className = className;
+    const label = document.createElement('th');
+    label.textContent = labelText;
+    row.append(label);
+    for (const column of COLUMNS) {
+      const value = document.createElement('td');
+      value.textContent = valueFor(column);
+      row.append(value);
+    }
+    return row;
+  };
   for (const category of CATEGORIES) {
     const row = document.createElement('tr');
     const label = document.createElement('th');
@@ -28,6 +41,10 @@ function createPlayerSheet(player, totals) {
       row.append(score);
     }
     body.append(row);
+    if (category.key === UPPER_KEYS.at(-1)) {
+      body.append(totalRowFor('Somme 1-6', 'final-subtotal', (column) => totals.columns[column.key].upperRaw));
+      body.append(totalRowFor('Total (60)', 'final-upper-total', (column) => totals.columns[column.key].upperTotal));
+    }
   }
   const totalRow = document.createElement('tr');
   const totalLabel = document.createElement('th');

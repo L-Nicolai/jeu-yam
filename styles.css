@@ -532,6 +532,66 @@ button {
   background: #eee3da;
 }
 
+.upper-subtotal.grid-cell,
+.total-cell.upper-subtotal,
+.row-heading.upper-subtotal {
+  background: #f4ede4;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.potential-points {
+  pointer-events: none;
+  color: rgb(61 48 43 / 34%);
+  font-weight: 800;
+}
+
+.rules-link {
+  border: 0;
+  background: transparent;
+  color: var(--terracotta-dark);
+  padding: 9px 0 2px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.rules-panel {
+  margin-top: 20px;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.rules-panel h2 {
+  margin: 0 0 12px;
+  font-family: Georgia, "Times New Roman", serif;
+  text-align: center;
+}
+
+.rules-panel ul {
+  margin: 6px 0 12px;
+  padding-left: 20px;
+}
+
+.rules-panel li {
+  margin-bottom: 5px;
+}
+
+.final-subtotal th,
+.final-subtotal td {
+  color: var(--muted);
+  background: #f4ede4;
+}
+
+.final-upper-total th,
+.final-upper-total td {
+  background: #eee3da;
+  font-weight: 700;
+}
+
 .turn-panel {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

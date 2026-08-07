@@ -49,6 +49,9 @@ const elements = {
   localPlayerNames: document.querySelector('#local-player-names'),
   cancelLocal: document.querySelector('#cancel-local'),
   onlineRoot: document.querySelector('#online-root'),
+  showRules: document.querySelector('#show-rules'),
+  rulesPanel: document.querySelector('#rules-panel'),
+  closeRules: document.querySelector('#close-rules'),
 };
 
 const initialOnlineGameId = parseOnlineGameId(globalThis.location.hash);
@@ -436,6 +439,15 @@ function startGame(mode) {
 
 elements.startSingle.addEventListener('click', () => startGame(GAME_MODES.SINGLE));
 elements.startComputer.addEventListener('click', () => startGame(GAME_MODES.COMPUTER));
+
+elements.showRules.addEventListener('click', () => {
+  elements.modeActions.hidden = true;
+  elements.rulesPanel.hidden = false;
+});
+elements.closeRules.addEventListener('click', () => {
+  elements.rulesPanel.hidden = true;
+  elements.modeActions.hidden = false;
+});
 
 let fakeOnlineService = null;
 

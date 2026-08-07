@@ -28,6 +28,7 @@ export function renderGrid(container, state, {
   const actions = showActions ? getLegalActions(state) : { entries: [], announcements: [] };
   const playable = new Set(actions.entries.map(({ column, category }) => `${column}:${category}`));
   const announceable = new Set(actions.announcements.map(({ column, category }) => `${column}:${category}`));
+  const potential = new Map(actions.entries.map(({ column, category, points }) => [`${column}:${category}`, points]));
 
   container.replaceChildren();
   container.append(cell('grid-corner', 'Cases'));
@@ -54,7 +55,16 @@ export function renderGrid(container, state, {
           && highlightedEntry.column === column.key
           && highlightedEntry.category === category.key,
       );
-      button.setAttribute('aria-label', `${category.label}, colonne ${column.label}${value === null ? '' : ` : ${value} points`}`);
+      if (value === null && potential.has(key)) {
+        const ghost = document.createElement('span');
+        ghost.className = 'potential-points';
+        ghost.textContent = String(potential.get(key));
+        button.append(ghost);
+      }
+      const potentialLabel = value === null && potential.has(key)
+        ? `, rapporterait ${potential.get(key)} point${potential.get(key) > 1 ? 's' : ''}`
+        : '';
+      button.setAttribute('aria-label', `${category.label}, colonne ${column.label}${value === null ? '' : ` : ${value} points`}${potentialLabel}`);
       if (onCell) button.addEventListener('click', () => onCell(column.key, category.key, {
         playable: playable.has(key),
         announceable: announceable.has(key),
@@ -63,6 +73,11 @@ export function renderGrid(container, state, {
     }
 
     if (category.key === UPPER_KEYS.at(-1)) {
+      container.append(cell('row-heading upper-subtotal', 'Somme 1-6'));
+      for (const column of COLUMNS) {
+        const started = UPPER_KEYS.some((key) => sheet[column.key][key] !== null);
+        container.append(cell('total-cell upper-subtotal', started ? String(totals.columns[column.key].upperRaw) : '—'));
+      }
       container.append(cell('row-heading upper-total', 'Total (60)'));
       for (const column of COLUMNS) {
         const value = totals.columns[column.key].upperComplete ? totals.columns[column.key].upperTotal : '—';
