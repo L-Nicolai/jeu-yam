@@ -7,24 +7,35 @@ const PIP_POSITIONS = {
   6: ['tl', 'tr', 'ml', 'mr', 'bl', 'br'],
 };
 
-export function renderDice(container, turn, { onToggle = null } = {}) {
-  container.replaceChildren();
+export function renderDice(container, turn, {
+  onToggle = null,
+  pendingSync = false,
+  preserveElements = false,
+} = {}) {
+  if (!preserveElements) container.replaceChildren();
   turn.dice.forEach((value, index) => {
-    const die = document.createElement('button');
+    const die = preserveElements && container.children[index]
+      ? container.children[index]
+      : document.createElement('button');
     die.type = 'button';
     die.className = 'die';
+    die.replaceChildren();
     for (const position of PIP_POSITIONS[value] ?? []) {
       const pip = document.createElement('span');
       pip.className = `pip pip-${position}`;
       die.append(pip);
     }
     die.classList.toggle('held', turn.held[index]);
+    die.classList.toggle('pending-sync', pendingSync);
     die.disabled = turn.rollCount === 0 || turn.rollCount >= 3 || !onToggle;
     die.setAttribute('aria-label', `Dé ${index + 1} : ${value}${turn.held[index] ? ', gardé' : ''}`);
     die.setAttribute('aria-pressed', String(turn.held[index]));
-    if (onToggle) die.addEventListener('click', () => onToggle(index));
-    container.append(die);
+    die.onclick = onToggle ? () => onToggle(index) : null;
+    if (!die.parentNode) container.append(die);
   });
+  if (preserveElements) {
+    while (container.children.length > turn.dice.length) container.lastElementChild.remove();
+  }
 }
 
 export function animateDice(container) {

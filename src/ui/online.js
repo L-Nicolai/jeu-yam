@@ -26,6 +26,25 @@ export function isMyRemoteTurn(document, credentials) {
   return Boolean(state && credentials?.playerId === state.players[state.activePlayerIndex]?.id);
 }
 
+export function shouldAnimateRemoteRoll(previousDocument, nextDocument, credentials) {
+  if (!previousDocument || !nextDocument) return false;
+  if (nextDocument.version <= previousDocument.version) return false;
+  const action = nextDocument.state?.lastAction;
+  return action?.type === 'roll' && action.playerId !== credentials?.playerId;
+}
+
+export function shouldPublishRemoteAction(state) {
+  return state?.lastAction?.type !== 'hold';
+}
+
+export function reconcilePendingRemoteHolds(previousDocument, nextDocument, localState, credentials) {
+  if (!previousDocument || !nextDocument || !localState) return nextDocument?.state ?? localState;
+  if (nextDocument.version !== previousDocument.version) return nextDocument.state;
+  if (localState.lastAction?.type !== 'hold') return nextDocument.state;
+  const activePlayer = localState.players[localState.activePlayerIndex];
+  return activePlayer?.id === credentials?.playerId ? localState : nextDocument.state;
+}
+
 export function onlineErrorMessage(error) {
   return error?.code === 'not-found' ? 'Cette partie n’existe plus' : 'Connexion impossible — réessayer';
 }

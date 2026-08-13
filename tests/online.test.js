@@ -4,7 +4,15 @@ import assert from 'node:assert/strict';
 import { applyEntry } from '../src/engine/game.js';
 import { announceTam, getLegalActions, rollDice } from '../src/engine/rules.js';
 import { createFakeOnlineService } from '../src/net/fake.js';
-import { isMyRemoteTurn, onlineErrorMessage, onlineGateState, parseOnlineGameId } from '../src/ui/online.js';
+import {
+  isMyRemoteTurn,
+  onlineErrorMessage,
+  onlineGateState,
+  parseOnlineGameId,
+  reconcilePendingRemoteHolds,
+  shouldAnimateRemoteRoll,
+  shouldPublishRemoteAction,
+} from '../src/ui/online.js';
 import {
   ONLINE_PLACE_TOKENS_KEY,
   STORAGE_KEY,
@@ -196,6 +204,50 @@ test('U5/AE5 — une annonce Tam publiée est propagée aux abonnés', async () 
   state = announceTam(state, 'one');
   await service.publishState(gameId, { ...alice, state, version: document.version + 1, round: 1 });
   assert.deepEqual(await announced, { type: 'announce-tam', playerId: alice.playerId, category: 'one' });
+});
+
+test('un lancer distant ne s’anime qu’une fois et jamais sur son appareil d’origine', () => {
+  const credentials = { playerId: 'alice' };
+  const previous = { version: 4 };
+  const remoteRoll = {
+    version: 5,
+    state: { lastAction: { type: 'roll', playerId: 'basile' } },
+  };
+  const localEcho = {
+    version: 5,
+    state: { lastAction: { type: 'roll', playerId: 'alice' } },
+  };
+
+  assert.equal(shouldAnimateRemoteRoll(previous, remoteRoll, credentials), true);
+  assert.equal(shouldAnimateRemoteRoll(remoteRoll, remoteRoll, credentials), false);
+  assert.equal(shouldAnimateRemoteRoll(previous, localEcho, credentials), false);
+  assert.equal(shouldAnimateRemoteRoll(null, remoteRoll, credentials), false);
+});
+
+test('garder plusieurs dés reste local jusqu’au prochain coup utile', () => {
+  assert.equal(shouldPublishRemoteAction({ lastAction: { type: 'hold' } }), false);
+  assert.equal(shouldPublishRemoteAction({ lastAction: { type: 'roll' } }), true);
+  assert.equal(shouldPublishRemoteAction({ lastAction: { type: 'entry' } }), true);
+});
+
+test('un retour réseau sans nouvelle version ne supprime pas les dés gardés localement', () => {
+  const credentials = { playerId: 'alice' };
+  const document = {
+    version: 5,
+    state: {
+      activePlayerIndex: 0,
+      players: [{ id: 'alice' }, { id: 'basile' }],
+      turn: { dice: [1, 2, 3, 4, 5], held: [false, false, false, false, false], rollCount: 1 },
+    },
+  };
+  const localState = structuredClone(document.state);
+  localState.turn.held = [true, false, true, false, false];
+  localState.lastAction = { type: 'hold', playerId: 'alice', index: 2, held: true };
+
+  const reconciled = reconcilePendingRemoteHolds(document, document, localState, credentials);
+
+  assert.deepEqual(reconciled.turn.held, [true, false, true, false, false]);
+  assert.notEqual(reconciled, document.state);
 });
 
 test('U6/R13 — lien mort et panne réseau produisent deux issues distinctes', async () => {

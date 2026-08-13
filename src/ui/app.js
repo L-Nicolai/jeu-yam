@@ -24,7 +24,14 @@ import {
   showTamPicker,
 } from './preview.js';
 import { celebrateYam, showEndgame } from './endgame.js';
-import { createOnlineController, isMyRemoteTurn, parseOnlineGameId } from './online.js';
+import {
+  createOnlineController,
+  isMyRemoteTurn,
+  parseOnlineGameId,
+  reconcilePendingRemoteHolds,
+  shouldAnimateRemoteRoll,
+  shouldPublishRemoteAction,
+} from './online.js';
 
 const elements = {
   grid: document.querySelector('#score-grid'),
@@ -84,6 +91,7 @@ function canCurrentPlayerAct() {
 function updateState(nextState) {
   state = nextState;
   if (isRemoteGame()) {
+    if (!shouldPublishRemoteAction(nextState)) return;
     inputLocked = true;
     networkMessage = 'connexion…';
     render();
@@ -168,6 +176,8 @@ function render() {
   });
   renderDice(elements.dice, displayedRemoteTurn ?? state.turn, {
     onToggle: canCurrentPlayerAct() && !handoffRequired ? handleToggle : null,
+    pendingSync: isRemoteGame() && inputLocked,
+    preserveElements: isRemoteGame(),
   });
   elements.app.classList.toggle('computer-thinking', player.kind === 'computer');
 
@@ -477,8 +487,10 @@ function showOnlineBootstrapError(retry) {
 }
 
 function receiveOnlineGame(nextDocument) {
+  const animateRemoteRoll = shouldAnimateRemoteRoll(onlineDocument, nextDocument, onlineCredentials);
+  const nextState = reconcilePendingRemoteHolds(onlineDocument, nextDocument, state, onlineCredentials);
   onlineDocument = nextDocument;
-  state = nextDocument.state;
+  state = nextState;
   inputLocked = false;
   networkMessage = '';
   const activeId = state.players[state.activePlayerIndex].id;
@@ -505,7 +517,7 @@ function receiveOnlineGame(nextDocument) {
   }
   closePreview(elements.overlay);
   render();
-  if (action?.type === 'roll') animateDice(elements.dice);
+  if (animateRemoteRoll) animateDice(elements.dice);
   maybeAutoPlay();
 }
 

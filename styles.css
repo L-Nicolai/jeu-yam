@@ -662,6 +662,10 @@ button {
   opacity: 0.58;
 }
 
+.die.pending-sync:disabled {
+  opacity: 1;
+}
+
 .die.held {
   background: linear-gradient(145deg, #d8815f, var(--terracotta));
   border-color: var(--terracotta-dark);
