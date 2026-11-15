@@ -14,6 +14,7 @@ function publicDocument(document) {
     gameId: document.gameId,
     phase: document.phase,
     creatorPlayerId: document.creatorPlayerId,
+    includeDry: document.includeDry !== false,
     players: document.players.map(({ token: _token, ...player }) => player),
     state: document.state,
     version: document.version,
@@ -114,7 +115,7 @@ export function createFakeOnlineService({ random = Math.random, unavailable = fa
     };
   }
 
-  async function createOnlineGame({ creatorName }) {
+  async function createOnlineGame({ creatorName, includeDry = true }) {
     ensureAvailable();
     if (!normalizedName(creatorName)) fail('invalid-name', 'Entre ton prénom.');
     let gameId;
@@ -123,6 +124,7 @@ export function createFakeOnlineService({ random = Math.random, unavailable = fa
     const document = {
       gameId,
       phase: 'lobby',
+      includeDry: includeDry !== false,
       creatorPlayerId: creator.id,
       players: [creator],
       state: null,
@@ -186,6 +188,7 @@ export function createFakeOnlineService({ random = Math.random, unavailable = fa
     document.phase = 'playing';
     document.state = createEngineGame({
       mode: GAME_MODES.REMOTE,
+      includeDry: document.includeDry !== false,
       players: document.players.map(({ id, name }) => ({ id, name, kind: 'remote' })),
     });
     document.turnToken = document.players[document.state.activePlayerIndex].token;
@@ -246,6 +249,7 @@ export function createFakeOnlineService({ random = Math.random, unavailable = fa
     document.phase = 'playing';
     document.state = createEngineGame({
       mode: GAME_MODES.REMOTE,
+      includeDry: document.includeDry !== false,
       players: document.players.map(({ id, name }) => ({ id, name, kind: 'remote' })),
     });
     document.turnToken = document.players[0].token;

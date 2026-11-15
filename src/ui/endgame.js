@@ -1,7 +1,7 @@
-import { CATEGORIES, COLUMNS, UPPER_KEYS } from '../engine/constants.js';
+import { CATEGORIES, getColumns, UPPER_KEYS } from '../engine/constants.js';
 import { getGameOutcome, getGameTotals } from '../engine/game.js';
 
-function createPlayerSheet(player, totals) {
+function createPlayerSheet(player, totals, columns) {
   const section = document.createElement('section');
   section.className = 'final-sheet';
   const heading = document.createElement('h3');
@@ -10,7 +10,7 @@ function createPlayerSheet(player, totals) {
   const head = document.createElement('thead');
   const headRow = document.createElement('tr');
   headRow.append(document.createElement('th'));
-  for (const column of COLUMNS) {
+  for (const column of columns) {
     const cell = document.createElement('th');
     cell.textContent = column.shortLabel;
     headRow.append(cell);
@@ -23,7 +23,7 @@ function createPlayerSheet(player, totals) {
     const label = document.createElement('th');
     label.textContent = labelText;
     row.append(label);
-    for (const column of COLUMNS) {
+    for (const column of columns) {
       const value = document.createElement('td');
       value.textContent = valueFor(column);
       row.append(value);
@@ -35,7 +35,7 @@ function createPlayerSheet(player, totals) {
     const label = document.createElement('th');
     label.textContent = category.label;
     row.append(label);
-    for (const column of COLUMNS) {
+    for (const column of columns) {
       const score = document.createElement('td');
       score.textContent = player.sheet[column.key][category.key];
       row.append(score);
@@ -50,7 +50,7 @@ function createPlayerSheet(player, totals) {
   const totalLabel = document.createElement('th');
   totalLabel.textContent = 'TOTAL';
   totalRow.append(totalLabel);
-  for (const column of COLUMNS) {
+  for (const column of columns) {
     const value = document.createElement('td');
     value.textContent = totals.columns[column.key].total;
     totalRow.append(value);
@@ -94,7 +94,7 @@ export function showEndgame(root, state, { onReplay, replayLabel = 'Rejouer' }) 
   const sheets = document.createElement('div');
   sheets.className = 'final-sheets';
   sheets.classList.toggle('single-player', outcome.type === 'single');
-  state.players.forEach((player, index) => sheets.append(createPlayerSheet(player, totals[index])));
+  state.players.forEach((player, index) => sheets.append(createPlayerSheet(player, totals[index], getColumns(state))));
   const replay = document.createElement('button');
   replay.type = 'button';
   replay.className = 'confirm-button replay-button';

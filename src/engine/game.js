@@ -1,4 +1,4 @@
-import { CATEGORY_KEYS, COLUMN_KEYS, createEmptySheet } from './constants.js';
+import { CATEGORY_KEYS, getColumns, createEmptySheet } from './constants.js';
 import { scoreColumn } from './scoring.js';
 import { createPlayer } from './players.js';
 import { previewEntry } from './rules.js';
@@ -73,6 +73,7 @@ export function createGame(options = {}) {
   return {
     schemaVersion: 1,
     mode,
+    includeDry: options.includeDry !== false,
     players: playerDefinitions.map((player) => ({ ...player, sheet: createEmptySheet() })),
     activePlayerIndex: 0,
     completedTurns: 0,
@@ -83,12 +84,12 @@ export function createGame(options = {}) {
   };
 }
 
-export function isSheetComplete(sheet) {
-  return COLUMN_KEYS.every((column) => CATEGORY_KEYS.every((category) => sheet[column][category] !== null));
+export function isSheetComplete(sheet, options = {}) {
+  return getColumns(options).every(({ key }) => CATEGORY_KEYS.every((category) => sheet[key][category] !== null));
 }
 
 export function isGameOver(state) {
-  return state.players.every(({ sheet }) => isSheetComplete(sheet));
+  return state.players.every(({ sheet }) => isSheetComplete(sheet, state));
 }
 
 export function applyEntry(state, column, category, { strike = false } = {}) {
@@ -167,7 +168,7 @@ export function getGameOutcome(state) {
 export function getGameTotals(state) {
   return {
     players: state.players.map((player) => {
-      const columns = Object.fromEntries(COLUMN_KEYS.map((key) => [key, scoreColumn(player.sheet[key])]));
+      const columns = Object.fromEntries(getColumns(state).map(({ key }) => [key, scoreColumn(player.sheet[key])]));
       return {
         playerId: player.id,
         columns,

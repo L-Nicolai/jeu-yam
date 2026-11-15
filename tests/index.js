@@ -5,3 +5,5 @@ import './ai.test.js';
 import './fairness.test.js';
 import './online.test.js';
 import './dice-ui.test.js';
+import './dry-option.test.js';
+import './dry-ui.test.js';

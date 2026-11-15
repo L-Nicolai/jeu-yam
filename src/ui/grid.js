@@ -1,4 +1,4 @@
-import { CATEGORIES, COLUMNS, UPPER_KEYS } from '../engine/constants.js';
+import { CATEGORIES, getColumns, UPPER_KEYS } from '../engine/constants.js';
 import { getGameTotals } from '../engine/game.js';
 import { getLegalActions } from '../engine/rules.js';
 
@@ -9,9 +9,9 @@ function cell(className, text, tag = 'div') {
   return element;
 }
 
-function completedCount(sheet) {
-  return Object.values(sheet).reduce(
-    (total, column) => total + Object.values(column).filter((value) => value !== null).length,
+function completedCount(sheet, columns) {
+  return columns.reduce(
+    (total, { key }) => total + Object.values(sheet[key]).filter((value) => value !== null).length,
     0,
   );
 }
@@ -24,6 +24,7 @@ export function renderGrid(container, state, {
 } = {}) {
   const player = state.players[playerIndex];
   const sheet = player.sheet;
+  const columns = getColumns(state);
   const totals = getGameTotals(state).players[playerIndex];
   const actions = showActions ? getLegalActions(state) : { entries: [], announcements: [] };
   const playable = new Set(actions.entries.map(({ column, category }) => `${column}:${category}`));
@@ -33,14 +34,15 @@ export function renderGrid(container, state, {
     .map(({ column, category, points }) => [`${column}:${category}`, points]));
 
   container.replaceChildren();
+  container.style.setProperty('--column-count', String(columns.length));
   container.append(cell('grid-corner', 'Cases'));
-  for (const column of COLUMNS) {
+  for (const column of columns) {
     container.append(cell('column-heading', column.shortLabel));
   }
 
   for (const category of CATEGORIES) {
     container.append(cell('row-heading', category.label));
-    for (const column of COLUMNS) {
+    for (const column of columns) {
       const value = sheet[column.key][category.key];
       const key = `${column.key}:${category.key}`;
       const button = cell('score-cell', value === null ? '' : (value === 0 ? '×' : String(value)), 'button');
@@ -76,12 +78,12 @@ export function renderGrid(container, state, {
 
     if (category.key === UPPER_KEYS.at(-1)) {
       container.append(cell('row-heading upper-subtotal', 'Somme 1-6'));
-      for (const column of COLUMNS) {
+      for (const column of columns) {
         const started = UPPER_KEYS.some((key) => sheet[column.key][key] !== null);
         container.append(cell('total-cell upper-subtotal', started ? String(totals.columns[column.key].upperRaw) : '—'));
       }
       container.append(cell('row-heading upper-total', 'Total (60)'));
-      for (const column of COLUMNS) {
+      for (const column of columns) {
         const value = totals.columns[column.key].upperComplete ? totals.columns[column.key].upperTotal : '—';
         container.append(cell('total-cell upper-total', String(value)));
       }
@@ -89,10 +91,10 @@ export function renderGrid(container, state, {
   }
 
   container.append(cell('row-heading grand-total', 'TOTAL'));
-  for (const column of COLUMNS) {
+  for (const column of columns) {
     container.append(cell('total-cell grand-total', String(totals.columns[column.key].total)));
   }
 
   document.querySelector('#sheet-title').textContent = `Feuille de ${player.name}`;
-  document.querySelector('#turn-progress').textContent = `${completedCount(sheet)} / 65`;
+  document.querySelector('#turn-progress').textContent = `${completedCount(sheet, columns)} / ${CATEGORIES.length * columns.length}`;
 }

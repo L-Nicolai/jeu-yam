@@ -17,6 +17,13 @@
         <p class="welcome-eyebrow">Le Yam de Leslie</p>
         <h1 id="welcome-title">À vous de jouer</h1>
         <p>Choisissez votre façon de remplir la feuille aujourd’hui.</p>
+        <div class="game-options" id="game-options">
+          <label class="dry-option">
+            <input id="include-dry" type="checkbox" checked aria-describedby="dry-option-help">
+            <span>Jouer avec la colonne Sèche</span>
+          </label>
+          <small id="dry-option-help">Décochez pour jouer avec 4 colonnes au lieu de 5.</small>
+        </div>
         <div class="mode-actions">
           <button class="mode-button primary-mode" id="start-single" type="button">
             <strong>Jouer seule</strong>
@@ -38,7 +45,7 @@
         </div>
         <section class="rules-panel" id="rules-panel" hidden aria-labelledby="rules-title">
           <h2 id="rules-title">Règles du jeu</h2>
-          <p><strong>Le but.</strong> Remplir les 65 cases de sa feuille (13 cases × 5 colonnes). Le meilleur TOTAL gagne.</p>
+          <p><strong>Le but.</strong> Remplir les 65 cases de sa feuille (13 cases × 5 colonnes), ou 52 cases si vous désactivez la colonne Sèche avant de commencer. Le meilleur TOTAL gagne.</p>
           <p><strong>Le tour.</strong> Jusqu’à 3 lancers ; entre deux lancers, touchez les dés à garder. Puis inscrivez exactement une case — une case ratée s’inscrit à 0.</p>
           <p><strong>Les 5 colonnes.</strong></p>
           <ul>
@@ -46,7 +53,7 @@
             <li><strong>Libre</strong> — dans n’importe quel ordre.</li>
             <li><strong>Montante</strong> — dans l’ordre, du Yam vers le 1.</li>
             <li><strong>Tam</strong> — sur annonce faite juste après le 1ᵉʳ lancer : la case annoncée devient obligatoire, réussie ou non (après le 3ᵉ lancer, elle s’inscrit toute seule).</li>
-            <li><strong>Sèche</strong> — uniquement avec le résultat du 1ᵉʳ lancer du tour ; toute relance la ferme pour ce tour.</li>
+            <li><strong>Sèche (facultative)</strong> — uniquement avec le résultat du 1ᵉʳ lancer du tour ; toute relance la ferme pour ce tour. À distance, la personne qui crée la partie choisit pour tout le groupe.</li>
           </ul>
           <p><strong>La partie haute (1 à 6).</strong> Chaque case vaut la somme des dés de sa valeur. Quand les six cases d’une colonne sont remplies, la ligne Total (60) s’applique : 60 points ou plus → 90 + 5 par point au-dessus de 60 ; moins de 60 → la somme − 5 par point manquant.</p>
           <p><strong>Les combinaisons.</strong></p>

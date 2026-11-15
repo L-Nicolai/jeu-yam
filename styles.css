@@ -91,6 +91,39 @@ button {
   margin-top: 28px;
 }
 
+.game-options {
+  margin-top: 20px;
+  text-align: left;
+}
+
+.game-options small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.dry-option,
+.online-join-form .dry-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dry-option input[type="checkbox"] {
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  min-height: 20px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--terracotta);
+}
+
 .mode-button {
   min-height: 76px;
   display: flex;
@@ -418,7 +451,7 @@ button {
   min-width: 0;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(49px, 1.2fr) repeat(5, minmax(0, 1fr));
+  grid-template-columns: minmax(49px, 1.2fr) repeat(var(--column-count, 5), minmax(0, 1fr));
   grid-template-rows: 1.15fr repeat(6, 1fr) 1.1fr repeat(7, 1fr) 1.12fr;
   border: 1px solid var(--line-strong);
   border-radius: 11px;

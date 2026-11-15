@@ -3,6 +3,7 @@ import {
   COLUMN_KEYS,
   TRIO_KEYS,
   categoryLabel,
+  getColumns,
 } from './constants.js';
 import { scoreCategory } from './scoring.js';
 
@@ -64,6 +65,7 @@ export function previewEntry(state, column, category, { strike = false } = {}) {
   if (!COLUMN_KEYS.includes(column) || !CATEGORY_KEYS.includes(category)) {
     throw new RangeError('Case inconnue.');
   }
+  if (column === 'dry' && state.includeDry === false) throw new Error('La colonne Sèche est désactivée.');
   if (sheet[column][category] !== null) throw new Error('Cette case est déjà remplie.');
   if (column === 'tam' && state.turn.tamAnnouncement !== category) {
     throw new Error('Cette inscription exige une annonce Tam sur cette case.');
@@ -105,7 +107,7 @@ export function getPlayableEntries(state) {
         : [orderedCategory(sheet, column)].filter(Boolean);
       for (const category of categories) candidates.push([column, category]);
     }
-    if (state.turn.rollCount === 1) {
+    if (state.turn.rollCount === 1 && state.includeDry !== false) {
       for (const category of emptyCategories(sheet, 'dry')) candidates.push(['dry', category]);
     }
   }
@@ -138,9 +140,11 @@ export function getLegalActions(state) {
     : [];
   const entries = getPlayableEntries(state);
   const emptyOutsideDry = ['descending', 'free', 'ascending'].some((column) => emptyCategories(sheet, column).length > 0);
-  const onlyTamRemains = COLUMN_KEYS.every((column) => column === 'tam' || emptyCategories(sheet, column).length === 0)
+  const columns = getColumns(state).map(({ key }) => key);
+  const onlyTamRemains = columns.every((column) => column === 'tam' || emptyCategories(sheet, column).length === 0)
     && emptyCategories(sheet, 'tam').length > 0;
-  const onlyDryRemains = COLUMN_KEYS.every((column) => column === 'dry' || emptyCategories(sheet, column).length === 0)
+  const onlyDryRemains = columns.includes('dry')
+    && columns.every((column) => column === 'dry' || emptyCategories(sheet, column).length === 0)
     && emptyCategories(sheet, 'dry').length > 0;
 
   let canReroll = state.turn.rollCount < 3 && (Boolean(state.turn.tamAnnouncement) || emptyOutsideDry);

@@ -51,6 +51,8 @@ const elements = {
   startLocal: document.querySelector('#start-local'),
   startOnline: document.querySelector('#start-online'),
   modeActions: document.querySelector('.mode-actions'),
+  gameOptions: document.querySelector('#game-options'),
+  includeDry: document.querySelector('#include-dry'),
   localSetup: document.querySelector('#local-setup'),
   localPlayerCount: document.querySelector('#local-player-count'),
   localPlayerNames: document.querySelector('#local-player-names'),
@@ -63,6 +65,7 @@ const elements = {
 
 const initialOnlineGameId = parseOnlineGameId(globalThis.location.hash);
 let state = initialOnlineGameId ? null : loadSavedGame();
+elements.includeDry.checked = state?.includeDry !== false;
 let inputLocked = false;
 let announcementText = '';
 let computerMessage = '';
@@ -436,7 +439,7 @@ function replayOnline() {
 }
 
 function startGame(mode) {
-  updateState(createGame({ mode }));
+  updateState(createGame({ mode, includeDry: elements.includeDry.checked }));
   announcementText = '';
   computerMessage = '';
   highlightedEntry = null;
@@ -452,10 +455,12 @@ elements.startComputer.addEventListener('click', () => startGame(GAME_MODES.COMP
 
 elements.showRules.addEventListener('click', () => {
   elements.modeActions.hidden = true;
+  elements.gameOptions.hidden = true;
   elements.rulesPanel.hidden = false;
 });
 elements.closeRules.addEventListener('click', () => {
   elements.rulesPanel.hidden = true;
+  elements.gameOptions.hidden = false;
   elements.modeActions.hidden = false;
 });
 
@@ -523,6 +528,7 @@ function receiveOnlineGame(nextDocument) {
 
 async function beginOnline({ gameId = null, create = false } = {}) {
   elements.modeActions.hidden = true;
+  elements.gameOptions.hidden = true;
   elements.localSetup.hidden = true;
   elements.onlineRoot.hidden = false;
   elements.onlineRoot.textContent = 'connexion…';
@@ -531,6 +537,7 @@ async function beginOnline({ gameId = null, create = false } = {}) {
     onlineController = createOnlineController({
       root: elements.onlineRoot,
       service,
+      includeDry: elements.includeDry.checked,
       onCredentials: (value) => { onlineCredentials = value; },
       onGame: receiveOnlineGame,
       onExit: () => {
@@ -541,6 +548,7 @@ async function beginOnline({ gameId = null, create = false } = {}) {
         waitingName = '';
         displayedRemoteTurn = null;
         elements.modeActions.hidden = false;
+        elements.gameOptions.hidden = false;
         render();
       },
       onError: () => {},
@@ -591,7 +599,7 @@ elements.localSetup.addEventListener('submit', (event) => {
   const names = [...elements.localPlayerNames.querySelectorAll('input')].map(({ value }) => value.trim());
   if (names.some((name) => !name)) return;
   const players = names.map((name, index) => ({ id: `local-${index + 1}`, name, kind: 'human' }));
-  updateState(createGame({ mode: GAME_MODES.LOCAL, players }));
+  updateState(createGame({ mode: GAME_MODES.LOCAL, players, includeDry: elements.includeDry.checked }));
   announcementText = '';
   computerMessage = '';
   highlightedEntry = null;

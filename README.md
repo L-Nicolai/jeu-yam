@@ -6,6 +6,8 @@ Une version téléphone du Yam familial de Leslie, jouable seule, contre un ordi
 
 Ouvrir l’adresse du jeu dans Safari ou Chrome, puis lancer les dés. Après chaque lancer, toucher les dés à garder et choisir une case éclairée. La partie est sauvegardée automatiquement après chaque action.
 
+Avant de commencer, décocher **Jouer avec la colonne Sèche** pour jouer avec quatre colonnes et 52 cases par feuille, au lieu de cinq colonnes et 65 cases. Cette option fonctionne dans les quatre modes. À distance, la personne qui crée la partie choisit pour tout le groupe ; le choix est affiché dans le salon et conservé pour la revanche. Les parties déjà sauvegardées sans cette option gardent leurs cinq colonnes. On ne retire pas une colonne en cours de partie.
+
 Pour essayer le jeu localement sur un ordinateur :
 
 ```sh

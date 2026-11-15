@@ -28,6 +28,13 @@ export const TRIO_KEYS = Object.freeze(['plus', 'middle', 'minus']);
 
 export const COLUMN_KEYS = Object.freeze(COLUMNS.map(({ key }) => key));
 
+const COLUMNS_WITHOUT_DRY = Object.freeze(COLUMNS.filter(({ key }) => key !== 'dry'));
+
+// Les anciennes sauvegardes sans option gardent leurs cinq colonnes.
+export function getColumns(options = {}) {
+  return options.includeDry === false ? COLUMNS_WITHOUT_DRY : COLUMNS;
+}
+
 export function createEmptyColumn() {
   return Object.fromEntries(CATEGORY_KEYS.map((key) => [key, null]));
 }

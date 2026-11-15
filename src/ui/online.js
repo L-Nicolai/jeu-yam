@@ -59,6 +59,7 @@ function element(tag, className, text = '') {
 export function createOnlineController({
   root,
   service,
+  includeDry = true,
   storage = globalThis.localStorage,
   locationObject = globalThis.location,
   navigatorObject = globalThis.navigator,
@@ -137,7 +138,10 @@ export function createOnlineController({
       start.disabled = snapshot.players.filter(({ connected }) => connected).length < 2;
       actions.append(start);
     }
-    root.append(heading, link, list, waiting, actions);
+    const variant = element('p', 'online-status', snapshot.includeDry === false
+      ? 'Sans colonne Sèche · 4 colonnes'
+      : 'Avec colonne Sèche · 5 colonnes');
+    root.append(heading, variant, link, list, waiting, actions);
   }
 
   function renderJoin() {
@@ -154,7 +158,10 @@ export function createOnlineController({
     const message = element('p', 'online-error');
     const submit = element('button', 'confirm-button', 'Entrer');
     submit.type = 'submit';
-    form.append(heading, label, message, submit);
+    const variant = element('p', 'online-status', snapshot.includeDry === false
+      ? 'Sans colonne Sèche · 4 colonnes'
+      : 'Avec colonne Sèche · 5 colonnes');
+    form.append(heading, variant, label, message, submit);
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
       submit.disabled = true;
@@ -276,13 +283,20 @@ export function createOnlineController({
     const message = element('p', 'online-error');
     const submit = element('button', 'confirm-button', 'Créer la partie');
     submit.type = 'submit';
-    form.append(element('h2', '', 'Jouer à distance'), label, message, submit);
+    const dryLabel = element('label', 'dry-option');
+    const dryInput = element('input');
+    dryInput.type = 'checkbox';
+    dryInput.id = 'online-include-dry';
+    dryInput.checked = includeDry;
+    dryLabel.append(dryInput, element('span', '', 'Jouer avec la colonne Sèche'));
+    form.append(element('h2', '', 'Jouer à distance'), label, dryLabel, message, submit);
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
       submit.disabled = true;
+      includeDry = dryInput.checked;
       showConnecting();
       try {
-        const result = await service.createGame({ creatorName: input.value });
+        const result = await service.createGame({ creatorName: input.value, includeDry });
         gameId = result.game.gameId;
         locationObject.hash = `p/${gameId}`;
         await acceptCredentials(result);

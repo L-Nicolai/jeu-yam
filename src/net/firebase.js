@@ -98,7 +98,7 @@ export async function createFirebaseOnlineService({ timeoutMs = DEFAULT_TIMEOUT_
     return { ...snapshot, players, state, lastAction: snapshot.lastAction ?? null };
   }
 
-  async function createGame({ creatorName }) {
+  async function createGame({ creatorName, includeDry = true }) {
     await requireConnection();
     const name = String(creatorName ?? '').trim();
     if (!name) throw namedError('invalid-name', 'Entre ton prénom.');
@@ -109,6 +109,7 @@ export async function createFirebaseOnlineService({ timeoutMs = DEFAULT_TIMEOUT_
     const document = {
       gameId,
       phase: 'lobby',
+      includeDry: includeDry !== false,
       creatorPlayerId: playerId,
       players: asStoredPlayers([creator]),
       state: null,
@@ -229,6 +230,7 @@ export async function createFirebaseOnlineService({ timeoutMs = DEFAULT_TIMEOUT_
       }
       current.state = createEngineGame({
         mode: GAME_MODES.REMOTE,
+        includeDry: current.includeDry !== false,
         players: current.players.map(({ id, name }) => ({ id, name, kind: 'remote' })),
       });
       current.phase = 'playing';
@@ -290,6 +292,7 @@ export async function createFirebaseOnlineService({ timeoutMs = DEFAULT_TIMEOUT_
       current.phase = 'playing';
       current.state = createEngineGame({
         mode: GAME_MODES.REMOTE,
+        includeDry: current.includeDry !== false,
         players: current.players.map(({ id, name }) => ({ id, name, kind: 'remote' })),
       });
       current.turnToken = current.players[0].token;
